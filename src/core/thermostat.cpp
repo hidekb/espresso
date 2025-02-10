@@ -52,7 +52,7 @@ void Thermostat::Thermostat::recalc_prefactors(double time_step) {
 #endif
 #ifdef NPT
   if (npt_iso) {
-    npt_iso->recalc_prefactors(kT, nptiso.piston, time_step);
+    npt_iso->recalc_prefactors(kT, get_system().nptiso->piston, time_step);
   }
 #endif
 }

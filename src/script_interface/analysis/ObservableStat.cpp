@@ -147,6 +147,18 @@ Variant ObservableStat::do_call_method(std::string const &name,
     auto const obs = system.calculate_pressure();
     return get_summary(system, *obs, false);
   }
+  if (name == "get_instantaneous_pressure") {
+    auto const obs = system.get_instantaneous_pressure();
+    return obs;
+  }
+  if (name == "get_instantaneous_pressure_tpdt") {
+    auto const obs = system.get_instantaneous_pressure_tpdt();
+    return obs;
+  }
+  if (name == "get_instantaneous_pressure_virial") {
+    auto const obs = system.get_instantaneous_pressure_virial();
+    return obs;
+  }
   return {};
 }
 

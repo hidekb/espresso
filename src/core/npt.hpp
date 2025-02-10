@@ -45,14 +45,20 @@ struct NptIsoParameters {
   double volume = 0.;
   /** desired pressure to which the algorithm strives to */
   double p_ext = 0.;
-  /** instantaneous pressure the system currently has */
+  /** instantaneous pressure the system with (q(t+dt), p(t+dt/2)) has */
   double p_inst = 0.;
+  /** instantaneous pressure the system with (q(t+dt), p(t+dt)) has */
+  double p_inst_tpdt = 0.;
+  /** instantaneous virial pressure the system with q(t+dt) has */
+  double p_inst_vir = 0.;
   /** difference between \ref p_ext and \ref p_inst */
   double p_diff = 0.;
   /** virial (short-range) components of \ref p_inst */
   Utils::Vector3d p_vir = {0., 0., 0.};
   /** ideal gas components of \ref p_inst, derived from the velocities */
   Utils::Vector3d p_vel = {0., 0., 0.};
+  /** ideal gas components of \ref p_inst, derived from the velocities */
+  Utils::Vector3d p_vel_tpdt = {0., 0., 0.};
   /** geometry information for the NpT integrator. Holds the vector
    *  \< dir, dir, dir \> where a positive value for dir indicates that
    *  box movement is allowed in that direction. To check whether a
@@ -77,7 +83,7 @@ struct NptIsoParameters {
   Utils::Vector<bool, 3> get_direction() const;
 };
 
-extern NptIsoParameters nptiso;
+//extern NptIsoParameters nptiso;
 
 /** @brief Synchronizes NpT state such as instantaneous and average pressure
  */

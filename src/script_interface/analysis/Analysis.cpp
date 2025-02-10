@@ -287,6 +287,15 @@ Variant Analysis::do_call_method(std::string const &name,
   if (name == "calculate_pressure_tensor") {
     return m_obs_stat->do_call_method("calculate_pressure_tensor", {});
   }
+  if (name == "get_instantaneous_pressure") {
+    return m_obs_stat->do_call_method("get_instantaneous_pressure", {});
+  }
+  if (name == "get_instantaneous_pressure_tpdt") {
+    return m_obs_stat->do_call_method("get_instantaneous_pressure_tpdt", {});
+  }
+  if (name == "get_instantaneous_pressure_virial") {
+    return m_obs_stat->do_call_method("get_instantaneous_pressure_virial", {});
+  }
   return {};
 }
 

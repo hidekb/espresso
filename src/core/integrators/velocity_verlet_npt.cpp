@@ -47,15 +47,20 @@ static void
 velocity_verlet_npt_propagate_vel_final(ParticleRangeNPT const &particles,
                                         IsotropicNptThermostat const &npt_iso,
                                         double time_step) {
+  auto &nptiso = *System::get_system().nptiso;
   nptiso.p_vel = {};
+  nptiso.p_vel_tpdt = {};
 
   for (auto &p : particles) {
     auto const noise = friction_therm0_nptiso<2>(npt_iso, p.v(), p.id());
     for (unsigned int j = 0; j < 3; j++) {
       if (!p.is_fixed_along(j)) {
         if (nptiso.geometry & ::nptgeom_dir[j]) {
-          nptiso.p_vel[j] += Utils::sqr(p.v()[j] * time_step) * p.mass();
+          //nptiso.p_vel[j] += Utils::sqr(p.v()[j] * time_step) * p.mass();
+          nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
           p.v()[j] += (p.force()[j] * time_step / 2.0 + noise[j]) / p.mass();
+          //nptiso.p_vel_tpdt[j] += Utils::sqr(p.v()[j] * time_step) * p.mass();
+          nptiso.p_vel_tpdt[j] += Utils::sqr(p.v()[j]) * p.mass();
         } else {
           // Propagate velocity: v(t+dt) = v(t+0.5*dt) + 0.5*dt * a(t+dt)
           p.v()[j] += p.force()[j] * time_step / 2.0 / p.mass();
@@ -70,18 +75,30 @@ static void
 velocity_verlet_npt_finalize_p_inst(IsotropicNptThermostat const &npt_iso,
                                     double time_step) {
   /* finalize derivation of p_inst */
+  auto &nptiso = *System::get_system().nptiso;
   nptiso.p_inst = 0.0;
+  nptiso.p_inst_tpdt = 0.0;
+  nptiso.p_inst_vir = 0.0;
   for (unsigned int i = 0; i < 3; i++) {
     if (nptiso.geometry & ::nptgeom_dir[i]) {
-      nptiso.p_vel[i] /= Utils::sqr(time_step);
+      //nptiso.p_vel[i] /= Utils::sqr(time_step);
       nptiso.p_inst += nptiso.p_vir[i] + nptiso.p_vel[i];
+      //nptiso.p_vel_tpdt[i] /= Utils::sqr(time_step);
+      nptiso.p_inst_tpdt += nptiso.p_vir[i] + nptiso.p_vel_tpdt[i];
+      nptiso.p_inst_vir  += nptiso.p_vir[i];
     }
   }
 
   double p_sum = 0.0;
   boost::mpi::reduce(comm_cart, nptiso.p_inst, p_sum, std::plus<double>(), 0);
+  double p_sum_tpdt = 0.0;
+  boost::mpi::reduce(comm_cart, nptiso.p_inst_tpdt, p_sum_tpdt, std::plus<double>(), 0);
+  double p_sum_vir = 0.0;
+  boost::mpi::reduce(comm_cart, nptiso.p_inst_vir, p_sum_vir, std::plus<double>(), 0);
   if (this_node == 0) {
     nptiso.p_inst = p_sum / (nptiso.dimension * nptiso.volume);
+    nptiso.p_inst_tpdt = p_sum_tpdt / (nptiso.dimension * nptiso.volume);
+    nptiso.p_inst_vir  = p_sum_vir / (nptiso.dimension * nptiso.volume);
     nptiso.p_diff += (nptiso.p_inst - nptiso.p_ext) * 0.5 * time_step +
                      friction_thermV_nptiso(npt_iso, nptiso.p_diff);
   }
@@ -94,6 +111,8 @@ velocity_verlet_npt_propagate_pos(ParticleRangeNPT const &particles,
 
   auto &box_geo = *system.box_geo;
   auto &cell_structure = *system.cell_structure;
+  //auto &nptiso = *system().nptiso;
+  auto &nptiso = *System::get_system().nptiso;
   Utils::Vector3d scal{};
   double L_new = 0.0;
 
@@ -166,6 +185,7 @@ static void
 velocity_verlet_npt_propagate_vel(ParticleRangeNPT const &particles,
                                   IsotropicNptThermostat const &npt_iso,
                                   double time_step) {
+  auto &nptiso = *System::get_system().nptiso;
   nptiso.p_vel = {};
 
   for (auto &p : particles) {
@@ -174,7 +194,8 @@ velocity_verlet_npt_propagate_vel(ParticleRangeNPT const &particles,
         auto const noise = friction_therm0_nptiso<1>(npt_iso, p.v(), p.id());
         if (nptiso.geometry & ::nptgeom_dir[j]) {
           p.v()[j] += (p.force()[j] * time_step / 2.0 + noise[j]) / p.mass();
-          nptiso.p_vel[j] += Utils::sqr(p.v()[j] * time_step) * p.mass();
+          //nptiso.p_vel[j] += Utils::sqr(p.v()[j] * time_step) * p.mass();
+          nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
         } else {
           // Propagate velocities: v(t+0.5*dt) = v(t) + 0.5*dt * a(t)
           p.v()[j] += p.force()[j] * time_step / 2.0 / p.mass();

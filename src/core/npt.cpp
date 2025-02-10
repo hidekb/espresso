@@ -39,9 +39,10 @@
 
 static constexpr Utils::Vector3i nptgeom_dir{{1, 2, 4}};
 
-NptIsoParameters nptiso = {};
+//NptIsoParameters nptiso = {};
 
 void synchronize_npt_state() {
+  auto &nptiso = *System::get_system().nptiso;
   boost::mpi::broadcast(comm_cart, nptiso.p_inst, 0);
   boost::mpi::broadcast(comm_cart, nptiso.p_diff, 0);
   boost::mpi::broadcast(comm_cart, nptiso.volume, 0);
@@ -77,13 +78,14 @@ NptIsoParameters::NptIsoParameters(double ext_pressure, double piston,
   if (piston <= 0.0) {
     throw std::runtime_error("The piston mass must be positive");
   }
+  auto const &nptiso = *System::get_system().nptiso;
 
-  inv_piston = ::nptiso.inv_piston;
-  volume = ::nptiso.volume;
-  p_inst = ::nptiso.p_inst;
-  p_diff = ::nptiso.p_diff;
-  p_vir = ::nptiso.p_vir;
-  p_vel = ::nptiso.p_vel;
+  inv_piston = nptiso.inv_piston;
+  volume = nptiso.volume;
+  p_inst = nptiso.p_inst;
+  p_diff = nptiso.p_diff;
+  p_vir = nptiso.p_vir;
+  p_vel = nptiso.p_vel;
 
   /* set the NpT geometry */
   for (auto const i : {0u, 1u, 2u}) {
@@ -110,6 +112,7 @@ Utils::Vector<bool, 3> NptIsoParameters::get_direction() const {
 }
 
 void npt_ensemble_init(Utils::Vector3d const &box_l, bool recalc_forces) {
+  auto &nptiso = *System::get_system().nptiso;
   nptiso.inv_piston = 1. / nptiso.piston;
   nptiso.volume = std::pow(box_l[nptiso.non_const_dim], nptiso.dimension);
   if (recalc_forces) {
@@ -123,6 +126,7 @@ void integrator_npt_sanity_checks() {
   if (::System::get_system().propagation->used_propagations &
       PropagationMode::TRANS_LANGEVIN_NPT) {
     try {
+      auto const &nptiso = *System::get_system().nptiso;
       nptiso.coulomb_dipole_sanity_checks();
     } catch (std::runtime_error const &err) {
       runtimeErrorMsg() << err.what();
@@ -134,6 +138,7 @@ void integrator_npt_sanity_checks() {
 void npt_reset_instantaneous_virials() {
   if (::System::get_system().propagation->used_propagations &
       PropagationMode::TRANS_LANGEVIN_NPT) {
+    auto &nptiso = *System::get_system().nptiso;
     nptiso.p_vir = Utils::Vector3d{};
   }
 }
@@ -141,6 +146,7 @@ void npt_reset_instantaneous_virials() {
 void npt_add_virial_contribution(double energy) {
   if (::System::get_system().propagation->used_propagations &
       PropagationMode::TRANS_LANGEVIN_NPT) {
+    auto &nptiso = *System::get_system().nptiso;
     nptiso.p_vir[0] += energy;
   }
 }
@@ -149,6 +155,7 @@ void npt_add_virial_contribution(const Utils::Vector3d &force,
                                  const Utils::Vector3d &d) {
   if (::System::get_system().propagation->used_propagations &
       PropagationMode::TRANS_LANGEVIN_NPT) {
+    auto &nptiso = *System::get_system().nptiso;
     nptiso.p_vir += hadamard_product(force, d);
   }
 }
