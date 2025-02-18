@@ -131,4 +131,10 @@ double System::get_instantaneous_pressure_tpdt() {
 double System::get_instantaneous_pressure_virial() {
   return nptiso->p_inst_vir;
 }
+double System::get_npt_volume() {
+  return nptiso->volume;
+}
+double System::get_kinetic_energy_for_volume() {
+  return 0.5*nptiso->p_epsilon*nptiso->p_epsilon/nptiso->piston;
+}
 } // namespace System

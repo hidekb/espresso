@@ -44,7 +44,7 @@ static constexpr Utils::Vector3i nptgeom_dir{{1, 2, 4}};
 void synchronize_npt_state() {
   auto &nptiso = *System::get_system().nptiso;
   boost::mpi::broadcast(comm_cart, nptiso.p_inst, 0);
-  boost::mpi::broadcast(comm_cart, nptiso.p_diff, 0);
+  boost::mpi::broadcast(comm_cart, nptiso.p_epsilon, 0);
   boost::mpi::broadcast(comm_cart, nptiso.volume, 0);
 }
 
@@ -83,7 +83,7 @@ NptIsoParameters::NptIsoParameters(double ext_pressure, double piston,
   inv_piston = nptiso.inv_piston;
   volume = nptiso.volume;
   p_inst = nptiso.p_inst;
-  p_diff = nptiso.p_diff;
+  p_epsilon = nptiso.p_epsilon;
   p_vir = nptiso.p_vir;
   p_vel = nptiso.p_vel;
 

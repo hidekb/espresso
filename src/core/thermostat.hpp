@@ -284,8 +284,19 @@ public:
     auto const half_time_step = time_step / 2.0;
     pref_rescale_0 = -gamma0 * half_time_step;
     pref_noise_0 = sigma(kT, gamma0, time_step);
+    //pref_rescale_0 = -gamma0 * time_step; // BAOAB
+    //pref_noise_0 = sigma(kT, gamma0, 2*time_step); // BAOAB
     pref_rescale_V = -gammav * half_time_step / piston;
     pref_noise_V = sigma(kT, gammav, time_step);
+    //pref_rescale_V = -gammav * time_step / piston; // BAOAB
+    //pref_noise_V = sigma(kT, gammav, 2*time_step); // BAOAB
+
+    pref_rescale_0_MKT = std::exp(-gamma0 * time_step);
+    pref_noise_0_MKT = sigma_MKT(kT, gamma0, time_step);
+    pref_rescale_V_MKT = std::exp(-gammav * half_time_step);
+    pref_noise_V_MKT = sigma_MKT(kT, gammav, half_time_step);
+    pref_rescale_V_MKT_dt = std::exp(-gammav * time_step);
+    pref_noise_V_MKT_dt = sigma_MKT(kT, gammav, time_step);
   }
   /** Calculate the noise prefactor.
    *  Evaluates the quantity @f$ \sqrt{2 k_B T \gamma dt / 2} / \sigma_\eta @f$
@@ -297,6 +308,9 @@ public:
     // coefficient of 2 is canceled out by the half time step
     constexpr auto const temp_coeff = 12.0;
     return sqrt(temp_coeff * kT * gamma * time_step);
+  }
+  static double sigma_MKT(double kT, double gamma, double time_step) {
+    return sqrt(kT * (1.0 - std::exp(- 2 * gamma * time_step)));
   }
   /** @name Parameters */
   /**@{*/
@@ -315,6 +329,15 @@ public:
    *  Stores @f$ \sqrt{k_B T \gamma^{0} dt} / \sigma_\eta @f$.
    */
   double pref_noise_0 = 0.;
+  /**@{*/
+  /** Particle velocity rescaling at the time step for MKT.
+   *  Stores @f$ \exp(-\gamma^{0} \cdot dt) @f$.
+   */
+  double pref_rescale_0_MKT = 0.;
+  /** Particle velocity rescaling noise standard deviation for MKT
+   *  Stores @f$ \sqrt{k_B T ( 1 - \exp( -2 \gamma^{0} dt}) @f$
+   */
+  double pref_noise_0_MKT = 0.;
   /** Volume rescaling at half the time step.
    *  Stores @f$ \frac{\gamma^{V}}{Q}\cdot\frac{dt}{2} @f$.
    */
@@ -323,6 +346,17 @@ public:
    *  Stores @f$ \sqrt{k_B T \gamma^{V} dt} / \sigma_\eta @f$.
    */
   double pref_noise_V = 0.;
+  /**@{*/
+  /** Volume rescaling at the half time step for MKT.
+   *  Stores @f$ \exp(-\gamma^{0} \cdot \frac{dt}{2}) @f$.
+   */
+  double pref_rescale_V_MKT = 0.;
+  double pref_rescale_V_MKT_dt = 0.;
+  /** Volume rescaling noise standard deviation for MKT
+   *  Stores @f$ \sqrt{k_B T ( 1 - \exp( -\gamma^{0} dt}) @f$
+   */
+  double pref_noise_V_MKT = 0.;
+  double pref_noise_V_MKT_dt = 0.;
   /**@}*/
 };
 #endif

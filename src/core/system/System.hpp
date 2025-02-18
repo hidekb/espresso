@@ -159,6 +159,12 @@ public:
   /** @brief get the instantaneous virial pressure with q(t+dt)*/
   double get_instantaneous_pressure_virial();
 
+  /** @brief get the volume controled by npt*/
+  double get_npt_volume();
+
+  /** @brief get the kinetic energy for volume controled by npt*/
+  double get_kinetic_energy_for_volume();
+
   /** @brief Calculate all forces. */
   void calculate_forces();
 

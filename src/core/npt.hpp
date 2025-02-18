@@ -51,8 +51,8 @@ struct NptIsoParameters {
   double p_inst_tpdt = 0.;
   /** instantaneous virial pressure the system with q(t+dt) has */
   double p_inst_vir = 0.;
-  /** difference between \ref p_ext and \ref p_inst */
-  double p_diff = 0.;
+  /** momentum for volume */
+  double p_epsilon = 0.;
   /** virial (short-range) components of \ref p_inst */
   Utils::Vector3d p_vir = {0., 0., 0.};
   /** ideal gas components of \ref p_inst, derived from the velocities */
