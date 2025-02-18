@@ -458,6 +458,8 @@ class Analysis(ScriptInterfaceHelper):
 
             * ``"total"``: total energy
             * ``"kinetic"``: linear and rotational kinetic energy
+            * ``"kinetic_lin"``: linear kinetic energy
+            * ``"kinetic_rot"``: rotational kinetic energy
             * ``"bonded"``: total bonded energy
             * ``"bonded", <bond_id>``: bonded energy from the bond
               identified by ``bond_id``

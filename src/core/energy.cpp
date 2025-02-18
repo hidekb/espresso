@@ -56,7 +56,8 @@ std::shared_ptr<Observable_stat> System::calculate_energy() {
   auto const local_parts = cell_structure->local_particles();
 
   for (auto const &p : local_parts) {
-    obs_energy.kinetic[0] += calc_kinetic_energy(p);
+    obs_energy.kinetic_lin[0] += translational_kinetic_energy(p);
+    obs_energy.kinetic_rot[0] += rotational_kinetic_energy(p);
   }
 
   auto const coulomb_kernel = coulomb.pair_energy_kernel();
