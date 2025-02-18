@@ -44,19 +44,6 @@
 
 static constexpr Utils::Vector3i nptgeom_dir{{1, 2, 4}};
 
-static void
-velocity_verlet_npt_count_part_num(ParticleRangeNPT const &particles) {
-  auto &nptiso = *System::get_system().nptiso;
-  unsigned int particle_number = particles.size();
-  unsigned int n_sum;
-  boost::mpi::reduce(comm_cart, particle_number, n_sum, std::plus<unsigned int>(), 0);
-  if (this_node == 0) {
-    particle_number = n_sum;
-  }
-  boost::mpi::broadcast(comm_cart, particle_number, 0);
-  nptiso.particle_number = particle_number;
-}
-
 /** Scale and communicate instantaneous NpT pressure */
 static void
 velocity_verlet_npt_propagate_p_eps(IsotropicNptThermostat const &npt_iso,
@@ -87,7 +74,7 @@ velocity_verlet_npt_propagate_p_eps(IsotropicNptThermostat const &npt_iso,
     nptiso.p_inst_vir  = p_sum_vir / (nptiso.dimension * nptiso.volume);
     p_epsilon = nptiso.p_epsilon;
     p_epsilon += (nptiso.p_inst - nptiso.p_ext) * 1.5 * time_step * nptiso.volume;
-    p_epsilon += (1.0/(nptiso.particle_number - 1)) * (p_sum - p_sum_vir) * 0.5 * time_step;
+    p_epsilon += (1.0/(get_n_part() - 1)) * (p_sum - p_sum_vir) * 0.5 * time_step;
   }
   boost::mpi::broadcast(comm_cart, p_epsilon, 0);
   nptiso.p_epsilon = p_epsilon;
@@ -205,7 +192,7 @@ velocity_verlet_npt_propagate_vel_MTK(ParticleRangeNPT const &particles,
   nptiso.p_vel = {};
   auto const propagater =
 	  std::exp(-nptiso.inv_piston * nptiso.p_epsilon * 0.5 * time_step * 
-	       (1. + 1./(nptiso.particle_number - 1)));
+	       (1. + 1./(get_n_part() - 1)));
 
   for (auto &p : particles) {
     for (unsigned int j = 0; j < 3; j++) {
@@ -241,7 +228,10 @@ velocity_verlet_npt_propagate_vel(ParticleRangeNPT const &particles,
 void velocity_verlet_npt_step_1(ParticleRangeNPT const &particles,
                                 IsotropicNptThermostat const &npt_iso,
                                 double time_step, System::System &system) {
-  velocity_verlet_npt_count_part_num(particles);
+  if (get_n_part() == 1.0) {
+    runtimeErrorMsg()
+        << "your choice of n = 1 is not allowed with MKT NPT.";
+  }
   velocity_verlet_npt_propagate_vel_MTK(particles, npt_iso, time_step);
   velocity_verlet_npt_propagate_p_eps(npt_iso, time_step);
   velocity_verlet_npt_propagate_vel(particles, npt_iso, time_step);

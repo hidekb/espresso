@@ -66,10 +66,11 @@ class NPTPressure(ut.TestCase):
         #system.integrator.run(100)
 
         system.thermostat.set_npt(kT=1.0, gamma0=0.5, gammav=0.001, seed=42)
+        #system.thermostat.set_npt(kT=1.0, gamma0=0., gammav=0., seed=42)
         system.integrator.set_isotropic_npt(ext_pressure=ext_pressure,
-                                            piston=10.0,
+                                            piston=4.0,
                                             direction=direction)
-        verbose = 0
+        verbose = 1
         delta_p = list()
         volume = list()
         p_kinV = list()
@@ -100,7 +101,7 @@ class NPTPressure(ut.TestCase):
             delta_p.append(p_sim - ext_pressure)
             volume.append(system.box_l[0]*system.box_l[1]*system.box_l[2])
             p_kinV.append(p_kin*np.prod(system.box_l))
-        verbose_acf = 0
+        verbose_acf = 1
         if verbose_acf:
             acf_p = np.correlate(delta_p, delta_p, mode='same') 
             for n in range(len(acf_p)):
