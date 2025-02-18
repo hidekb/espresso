@@ -178,5 +178,5 @@ inline void add_kinetic_virials(Particle const &p1,
   /* kinetic pressure */
   for (std::size_t k = 0u; k < 3u; k++)
     for (std::size_t l = 0u; l < 3u; l++)
-      obs_pressure.kinetic[k * 3u + l] += p1.v()[k] * p1.v()[l] * p1.mass();
+      obs_pressure.kinetic_lin[k * 3u + l] += p1.v()[k] * p1.v()[l] * p1.mass();
 }

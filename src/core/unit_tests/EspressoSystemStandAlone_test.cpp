@@ -222,7 +222,7 @@ BOOST_FIXTURE_TEST_CASE(espresso_system_stand_alone, ParticleFactory) {
       if (rank == 0) {
         auto const &p = *p_opt;
         auto const kinetic_energy = 0.5 * p.mass() * p.v().norm2();
-        BOOST_CHECK_CLOSE(obs_energy->kinetic[0], kinetic_energy, tol);
+        BOOST_CHECK_CLOSE(obs_energy->kinetic_lin[0], kinetic_energy, tol);
       }
     }
   }
