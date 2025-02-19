@@ -55,6 +55,15 @@ public:
     m_bond_breakage = std::make_shared<::BondBreakage::BondBreakage>();
     restore_from_checkpoint(params);
   }
+  Variant do_call_method(std::string const &name,
+                         VariantMap const &parameters) override {
+    if (name == "execute") {
+      context()->parallel_try_catch(
+          [this]() { m_bond_breakage->execute_bond_breakage(get_system()); });
+      return {};
+    }
+    return Base::do_call_method(name, parameters);
+  }
 
 private:
   void on_bind_system(::System::System &system) override {
