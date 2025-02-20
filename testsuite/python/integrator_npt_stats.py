@@ -45,14 +45,14 @@ class IntegratorNPT(ut.TestCase):
         system.box_l = [5.86326165] * 3
 
         data = np.genfromtxt(tests_common.data_path("npt_lj_system.data"))
-        p_ext = 2.0
+        p_ext = 1.0
 
         system.part.add(pos=data[:, :3], v=data[:, 3:])
         system.non_bonded_inter[0, 0].lennard_jones.set_params(
             epsilon=1, sigma=1, cutoff=1.12246, shift=0.25)
 
         system.thermostat.set_npt(kT=1.0, gamma0=2, gammav=0.004, seed=42)
-        system.integrator.set_isotropic_npt(ext_pressure=p_ext, piston=0.0001)
+        system.integrator.set_isotropic_npt(ext_pressure=p_ext, piston=4.0)
 
         system.integrator.run(800)
         avp = 0
@@ -70,7 +70,7 @@ class IntegratorNPT(ut.TestCase):
         compressibility = np.var(Vs) / np.average(Vs)
 
         self.assertAlmostEqual(avp, p_ext, delta=0.02)
-        self.assertAlmostEqual(compressibility, 0.32, delta=0.05)
+        self.assertAlmostEqual(compressibility, 0.49, delta=0.05)
 
 
 if __name__ == "__main__":

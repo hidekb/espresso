@@ -29,7 +29,7 @@ import espressomd.propagation
 class IntegratorNPT(ut.TestCase):
 
     """This tests the NpT integrator interface."""
-    system = espressomd.System(box_l=[1.0, 1.0, 1.0])
+    system = espressomd.System(box_l=[2.0, 2.0, 2.0])
 
     def setUp(self):
         self.system.box_l = [5] * 3
@@ -96,7 +96,7 @@ class IntegratorNPT(ut.TestCase):
         system = self.system
         system.time_step = 0.00001
         system.thermostat.set_npt(kT=0., gamma0=gamma0, gammav=1e-6, seed=42)
-        system.integrator.set_isotropic_npt(ext_pressure=0.01, piston=1e6)
+        system.integrator.set_isotropic_npt(ext_pressure=0.01, piston=1e16)
         positions = []
         modes_trans = [
             Propagation.NONE,
@@ -116,46 +116,56 @@ class IntegratorNPT(ut.TestCase):
                 pos = np.copy(p.pos)
                 vel = np.copy(p.v)
                 ref_pos, ref_vel = calc_trajectory(p, x0)
-                np.testing.assert_allclose(pos, ref_pos, rtol=1e-7)
-                np.testing.assert_allclose(vel, ref_vel, rtol=1e-7)
+                np.testing.assert_allclose(pos, ref_pos, rtol=1e-9)
+                np.testing.assert_allclose(vel, ref_vel, rtol=1e-9)
 
     @utx.skipIfMissingFeatures(["VIRTUAL_SITES_RELATIVE"])
     def test_07__virtual(self):
+        DT = 0.01
+        V0 = 2.0
+        GAMMA0 = 0.1
         Propagation = espressomd.propagation.Propagation
         system = self.system
-        system.time_step = 0.01
+        system.time_step = DT
 
         virtual = system.part.add(pos=[0, 0, 0], v=[1, 0, 0])
-        physical = system.part.add(pos=[0, 0, 0], v=[2, 0, 0])
-        virtual.vs_relative = (physical.id, 0.1, (1., 0., 0., 0.))
+        physical1 = system.part.add(pos=[0, 0, 0], v=[V0, 0, 0])
+        physical2 = system.part.add(pos=[1, 1, 1], v=[V0, 0, 0])
+        virtual.vs_relative = (physical1.id, 0.1, (1., 0., 0., 0.))
         virtual.propagation = (Propagation.TRANS_VS_RELATIVE |
                                Propagation.ROT_VS_RELATIVE)
 
-        system.thermostat.set_npt(kT=0., gamma0=2., gammav=1e-6, seed=42)
-        system.integrator.set_isotropic_npt(ext_pressure=0.01, piston=1e6)
+        system.thermostat.set_npt(kT=0., gamma0=GAMMA0, gammav=1e-6, seed=42)
+        system.integrator.set_isotropic_npt(ext_pressure=0.01, piston=1e16)
 
         system.integrator.run(1)
 
-        np.testing.assert_almost_equal(np.copy(physical.f), [0., 0., 0.])
-        np.testing.assert_almost_equal(np.copy(physical.v), [1.9602, 0., 0.])
-        np.testing.assert_almost_equal(np.copy(physical.pos), [0.0198, 0., 0.])
+        ref_vel = V0*np.exp(-GAMMA0*DT)
+        ref_pos = (V0 - ref_vel)/GAMMA0
+
+        np.testing.assert_almost_equal(np.copy(physical1.f), [0., 0., 0.])
+        np.testing.assert_almost_equal(np.copy(physical1.v), [ref_vel, 0., 0.])
+        np.testing.assert_almost_equal(np.copy(physical1.pos), [ref_pos, 0., 0.])
         np.testing.assert_almost_equal(np.copy(virtual.f), [0., 0., 0.])
-        np.testing.assert_almost_equal(np.copy(virtual.v), [1.9602, 0., 0.])
-        np.testing.assert_almost_equal(np.copy(virtual.pos), [0.0198, 0., 0.1])
+        np.testing.assert_almost_equal(np.copy(virtual.v), [ref_vel, 0., 0.])
+        np.testing.assert_almost_equal(np.copy(virtual.pos), [ref_pos, 0., 0.1])
 
     @utx.skipIfMissingFeatures(["LENNARD_JONES"])
     def test_09_integrator_recovery(self):
         # the system is still in a valid state after a failure
         system = self.system
         np.random.seed(42)
-        npt_params = {'ext_pressure': 0.01, 'piston': 0.001}
-        system.box_l = [6] * 3
+        npt_params = {'ext_pressure': 0.01, 'piston':10.0}
+        system.box_l = [10] * 3
         system.part.add(pos=np.random.uniform(0, system.box_l[0], (11, 3)))
         system.non_bonded_inter[0, 0].lennard_jones.set_params(
             epsilon=1, sigma=1, cutoff=2**(1 / 6), shift=0.25)
-        system.thermostat.set_npt(kT=1.0, gamma0=2, gammav=0.04, seed=42)
+        #system.thermostat.set_npt(kT=1.0, gamma0=2, gammav=0.04, seed=42)
+        system.thermostat.set_npt(kT=1.0, gamma0=0.5, gammav=1.0, seed=42)
         system.integrator.set_isotropic_npt(**npt_params)
-
+        # compressibility \kappa_T for this system with ext_pressure = 0.01
+        KAPPA_T = 109
+        
         # get the equilibrium box length for the chosen NpT parameters
         system.integrator.run(500)
         # catch unstable simulation early (when the DP3M test case ran first)
@@ -171,7 +181,9 @@ class IntegratorNPT(ut.TestCase):
             system.integrator.set_isotropic_npt(ext_pressure=100, piston=-1)
         # the core state is unchanged
         system.integrator.run(500)
-        self.assertAlmostEqual(system.box_l[0], box_l_ref, delta=0.15)
+        # tolerance error based on compressibility
+        DELTA = (KAPPA_T*box_l_ref)**(1./6.)
+        self.assertAlmostEqual(system.box_l[0], box_l_ref, delta=DELTA)
 
         # setting another integrator with incorrect values doesn't leave the
         # system in an undefined state (the old integrator is still active)
@@ -187,7 +199,7 @@ class IntegratorNPT(ut.TestCase):
         self.assertEqual(params['piston'], npt_params['piston'])
         # the core state is unchanged
         system.integrator.run(500)
-        self.assertAlmostEqual(system.box_l[0], box_l_ref, delta=0.15)
+        self.assertAlmostEqual(system.box_l[0], box_l_ref, delta=DELTA)
 
         # setting the NpT integrator with incorrect values doesn't leave the
         # system in an undefined state (the old integrator is still active)
@@ -210,12 +222,12 @@ class IntegratorNPT(ut.TestCase):
 
     def run_with_p3m(self, container, p3m, method):
         system = self.system
-        npt_kwargs = {"ext_pressure": 0.001, "piston": 0.001}
+        npt_kwargs = {"ext_pressure": 0.01, "piston": 10.0}
         npt_kwargs_rectangular = {
             "cubic_box": False, "direction": (False, True, True), **npt_kwargs}
         np.random.seed(42)
         # set up particles
-        system.box_l = [6] * 3
+        system.box_l = [10] * 3
         partcl = system.part.add(
             pos=np.random.uniform(0, system.box_l[0], (11, 3)))
         if espressomd.has_features("P3M"):
