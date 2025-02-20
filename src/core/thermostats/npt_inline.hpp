@@ -66,12 +66,12 @@ propagate_therm0_nptiso(IsotropicNptThermostat const &npt_iso,
   constexpr auto const salt =
       (step == 1) ? RNGSalt::NPTISO0_HALF_STEP1 : RNGSalt::NPTISO0_HALF_STEP2;
   if (npt_iso.pref_noise_0_MKT > 0.0) {
-    return npt_iso.pref_rescale_0_MKT * vel +
+    return pow(npt_iso.pref_rescale_0_MKT, 1. / mass) * vel +
            npt_iso.pref_noise_0_MKT / std::sqrt(mass) *
                Random::noise_gaussian<salt>(npt_iso.rng_counter(),
                                             npt_iso.rng_seed(), p_identity);
   }
-  return npt_iso.pref_rescale_0_MKT * vel;
+  return pow(npt_iso.pref_rescale_0_MKT, 1. / mass) * vel;
 }
 
 /** Add p_epsilon-dependent noise and friction for NpT-sims to \ref

@@ -143,9 +143,9 @@ velocity_verlet_npt_propagate_pos_V(ParticleRangeNPT const &particles,
     auto const v_therm = propagate_therm0_nptiso<1>(npt_iso, p.v(), p.mass(), p.id());
     for (unsigned int j = 0; j < 3; j++) {
       if (!p.is_fixed_along(j)) {
-        if (nptiso.geometry & ::nptgeom_dir[j]) {
-	  p.v()[j] = v_therm[j];
-        }
+        //if (nptiso.geometry & ::nptgeom_dir[j]) {
+	p.v()[j] = v_therm[j];
+        //}
       }
     }
   }
@@ -210,10 +210,10 @@ velocity_verlet_npt_propagate_vel_MTK(ParticleRangeNPT const &particles,
   for (auto &p : particles) {
     for (unsigned int j = 0; j < 3; j++) {
       if (!p.is_fixed_along(j)) {
-        if (nptiso.geometry & ::nptgeom_dir[j]) {
-          p.v()[j] *= propagater;
-          nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
-        }
+        //if (nptiso.geometry & ::nptgeom_dir[j]) {
+        p.v()[j] *= propagater;
+        nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
+        //}
       }
     }
   }
@@ -230,9 +230,9 @@ velocity_verlet_npt_propagate_vel(ParticleRangeNPT const &particles,
     for (unsigned int j = 0; j < 3; j++) {
       if (!p.is_fixed_along(j)) {
         p.v()[j] += p.force()[j] * 0.5 * time_step / p.mass();
-        if (nptiso.geometry & ::nptgeom_dir[j]) {
-          nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
-        }
+        //if (nptiso.geometry & ::nptgeom_dir[j]) {
+        nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
+        //}
       }
     }
   }
