@@ -31,7 +31,7 @@
 
 #include <utils/Vector.hpp>
 
-#include <boost/mpi/collectives/broadcast.hpp>
+#include <boost/mpi/collectives.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -120,6 +120,15 @@ void npt_ensemble_init(Utils::Vector3d const &box_l, bool recalc_forces) {
     nptiso.p_vir = Utils::Vector3d{};
     nptiso.p_vel = Utils::Vector3d{};
   }
+  unsigned int particle_number =
+	  System::get_system().cell_structure->local_particles().size();
+  unsigned int n_sum;
+  boost::mpi::reduce(comm_cart, particle_number, n_sum, std::plus<unsigned int>(), 0);
+  if (this_node == 0) {
+    particle_number = n_sum;
+  }
+  boost::mpi::broadcast(comm_cart, particle_number, 0);
+  nptiso.particle_number = particle_number;
 }
 
 void integrator_npt_sanity_checks() {

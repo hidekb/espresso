@@ -59,7 +59,7 @@ system.integrator.run(10000)
 print("E after minimization:", system.analysis.energy()["total"])
 
 system.thermostat.set_npt(kT=2.0, gamma0=1.0, gammav=0.01, seed=42)
-system.integrator.set_isotropic_npt(ext_pressure=1.0, piston=0.01)
+system.integrator.set_isotropic_npt(ext_pressure=1.0, piston=4.0)
 
 
 def main():

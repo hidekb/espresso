@@ -29,7 +29,6 @@
 #include "communication.hpp"
 #include "errorhandling.hpp"
 #include "npt.hpp"
-#include "particle_node.hpp"
 #include "system/System.hpp"
 #include "thermostat.hpp"
 #include "thermostats/npt_inline.hpp"
@@ -43,19 +42,6 @@
 #include <functional>
 
 static constexpr Utils::Vector3i nptgeom_dir{{1, 2, 4}};
-
-static void
-velocity_verlet_npt_count_part_num(ParticleRangeNPT const &particles) {
-  auto &nptiso = *System::get_system().nptiso;
-  unsigned int particle_number = particles.size();
-  unsigned int n_sum;
-  boost::mpi::reduce(comm_cart, particle_number, n_sum, std::plus<unsigned int>(), 0);
-  if (this_node == 0) {
-    particle_number = n_sum;
-  }
-  boost::mpi::broadcast(comm_cart, particle_number, 0);
-  nptiso.particle_number = particle_number;
-}
 
 /** Scale and communicate instantaneous NpT pressure */
 static void
@@ -241,7 +227,6 @@ velocity_verlet_npt_propagate_vel(ParticleRangeNPT const &particles,
 void velocity_verlet_npt_step_1(ParticleRangeNPT const &particles,
                                 IsotropicNptThermostat const &npt_iso,
                                 double time_step, System::System &system) {
-  velocity_verlet_npt_count_part_num(particles);
   velocity_verlet_npt_propagate_vel_MTK(particles, npt_iso, time_step);
   velocity_verlet_npt_propagate_p_eps(npt_iso, time_step);
   velocity_verlet_npt_propagate_vel(particles, npt_iso, time_step);
