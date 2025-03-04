@@ -446,18 +446,18 @@ void System::on_integration_start() {
   lb.sanity_checks();
   ek.sanity_checks();
 
+#ifdef NPT
+  if (propagation->integ_switch == INTEG_METHOD_NPT_ISO) {
+    npt_ensemble_init(box_geo->length(), propagation->recalc_forces);
+  }
+#endif
+
   /* Prepare the thermostat */
   if (reinit_thermo) {
     thermostat->recalc_prefactors(time_step);
     reinit_thermo = false;
     propagation->recalc_forces = true;
   }
-
-#ifdef NPT
-  if (propagation->integ_switch == INTEG_METHOD_NPT_ISO) {
-    npt_ensemble_init(box_geo->length(), propagation->recalc_forces);
-  }
-#endif
 
   invalidate_fetch_cache();
 

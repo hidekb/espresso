@@ -43,6 +43,8 @@ struct NptIsoParameters {
    *  although for a 2d or 1d system we mean Area and Length respectively
    */
   double volume = 0.;
+  /** list of particle mass */
+  std::vector<double> mass_list;
   /** number of particle */
   int particle_number = 0;
   /** desired pressure to which the algorithm strives to */

@@ -65,13 +65,13 @@ propagate_therm0_nptiso(IsotropicNptThermostat const &npt_iso,
   static_assert(step == 1 or step == 2, "NPT only has 2 integration steps");
   constexpr auto const salt =
       (step == 1) ? RNGSalt::NPTISO0_HALF_STEP1 : RNGSalt::NPTISO0_HALF_STEP2;
-  if (npt_iso.pref_noise_0_MKT > 0.0) {
-    return pow(npt_iso.pref_rescale_0_MKT, 1. / mass) * vel +
-           npt_iso.pref_noise_0_MKT / std::sqrt(mass) *
+  if (npt_iso.pref_noise_0_MKT.at(mass) > 0.0) {
+    return npt_iso.pref_rescale_0_MKT.at(mass) * vel +
+           npt_iso.pref_noise_0_MKT.at(mass) *
                Random::noise_gaussian<salt>(npt_iso.rng_counter(),
                                             npt_iso.rng_seed(), p_identity);
   }
-  return pow(npt_iso.pref_rescale_0_MKT, 1. / mass) * vel;
+  return npt_iso.pref_rescale_0_MKT.at(mass) * vel;
 }
 
 /** Add p_epsilon-dependent noise and friction for NpT-sims to \ref
@@ -95,7 +95,7 @@ inline double propagate_thermV_nptiso(IsotropicNptThermostat const &npt_iso,
                                       double p_epsilon, double piston) {
   if (npt_iso.pref_noise_V_MKT > 0.0) {
     return npt_iso.pref_rescale_V_MKT * p_epsilon +
-           npt_iso.pref_noise_V_MKT * std::sqrt(piston) *
+           npt_iso.pref_noise_V_MKT *
                Random::noise_gaussian<RNGSalt::NPTISOV, 1>(
                    npt_iso.rng_counter(), npt_iso.rng_seed(), 0)[0];
   }
@@ -105,7 +105,7 @@ inline double propagate_thermV_nptiso_dt(IsotropicNptThermostat const &npt_iso,
                                          double p_epsilon, double piston) {
   if (npt_iso.pref_noise_V_MKT_dt > 0.0) {
     return npt_iso.pref_rescale_V_MKT_dt * p_epsilon +
-           npt_iso.pref_noise_V_MKT_dt * std::sqrt(piston) *
+           npt_iso.pref_noise_V_MKT_dt *
                Random::noise_gaussian<RNGSalt::NPTISOV, 1>(
                    npt_iso.rng_counter(), npt_iso.rng_seed(), 0)[0];
   }

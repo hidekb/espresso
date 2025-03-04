@@ -323,7 +323,7 @@ BOOST_AUTO_TEST_CASE(test_npt_iso_randomness) {
   thermostat.rng_initialize(0);
   thermostat.gamma0 = 2.0;
   thermostat.gammav = 0.1;
-  thermostat.recalc_prefactors(kT, 1.0, time_step);
+  thermostat.recalc_prefactors(kT, 1.0, std::vector{1.0}, time_step);
   auto p = particle_factory();
 
   auto const correlation = std::get<3>(noise_statistics(

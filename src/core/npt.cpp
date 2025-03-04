@@ -129,6 +129,27 @@ void npt_ensemble_init(Utils::Vector3d const &box_l, bool recalc_forces) {
   }
   boost::mpi::broadcast(comm_cart, particle_number, 0);
   nptiso.particle_number = particle_number;
+
+  std::vector<double> local_mass;
+  for (auto &p : System::get_system().cell_structure->local_particles()) {
+    local_mass.push_back(p.mass());
+  }
+  std::sort(local_mass.begin(), local_mass.end());
+  local_mass.erase(std::unique(local_mass.begin(), local_mass.end()), local_mass.end());
+
+  std::vector<std::vector<double>> gathered_mass;
+  boost::mpi::gather(comm_cart, local_mass, gathered_mass, 0);
+  //Merge mass_list
+  std::vector<double> merged_mass;
+  if (this_node == 0) {
+    for (const auto& vec : gathered_mass) {
+      merged_mass.insert(merged_mass.end(), vec.begin(), vec.end());
+    }
+    std::sort(merged_mass.begin(), merged_mass.end());
+    merged_mass.erase(std::unique(merged_mass.begin(), merged_mass.end()), merged_mass.end());
+  }
+  boost::mpi::broadcast(comm_cart, merged_mass, 0);
+  nptiso.mass_list = merged_mass;
 }
 
 void integrator_npt_sanity_checks() {

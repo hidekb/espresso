@@ -279,7 +279,8 @@ public:
   /** Recalculate prefactors.
    *  Needs to be called every time the parameters are changed.
    */
-  void recalc_prefactors(double kT, double piston, double time_step) {
+  void recalc_prefactors(double kT, double piston,
+		  std::vector<double> const &mass_list, double time_step) {
     assert(piston > 0.0);
     auto const half_time_step = time_step / 2.0;
     pref_rescale_0 = -gamma0 * half_time_step;
@@ -291,12 +292,14 @@ public:
     //pref_rescale_V = -gammav * time_step / piston; // BAOAB
     //pref_noise_V = sigma(kT, gammav, 2*time_step); // BAOAB
 
-    pref_rescale_0_MKT = std::exp(-gamma0 * time_step);
-    pref_noise_0_MKT = sigma_MKT(kT, gamma0, time_step);
-    pref_rescale_V_MKT = std::exp(-gammav * half_time_step);
-    pref_noise_V_MKT = sigma_MKT(kT, gammav, half_time_step);
-    pref_rescale_V_MKT_dt = std::exp(-gammav * time_step);
-    pref_noise_V_MKT_dt = sigma_MKT(kT, gammav, time_step);
+    for (const auto& mass : mass_list) {
+      pref_rescale_0_MKT[mass] = std::exp(-gamma0 * time_step / mass);
+      pref_noise_0_MKT[mass] = sigma_MKT(kT, gamma0 / mass, time_step) / std::sqrt(mass);
+    }
+    pref_rescale_V_MKT = std::exp(-gammav * half_time_step / piston);
+    pref_noise_V_MKT = sigma_MKT(kT, gammav / piston, half_time_step) * std::sqrt(piston);
+    pref_rescale_V_MKT_dt = std::exp(-gammav * time_step / piston);
+    pref_noise_V_MKT_dt = sigma_MKT(kT, gammav / piston, time_step) * std::sqrt(piston);
   }
   /** Calculate the noise prefactor.
    *  Evaluates the quantity @f$ \sqrt{2 k_B T \gamma dt / 2} / \sigma_\eta @f$
@@ -333,11 +336,13 @@ public:
   /** Particle velocity rescaling at the time step for MKT.
    *  Stores @f$ \exp(-\gamma^{0} \cdot dt) @f$.
    */
-  double pref_rescale_0_MKT = 0.;
+  //double pref_rescale_0_MKT = 0.;
+  std::unordered_map<double, double> pref_rescale_0_MKT;
   /** Particle velocity rescaling noise standard deviation for MKT
    *  Stores @f$ \sqrt{k_B T ( 1 - \exp( -2 \gamma^{0} dt}) @f$
    */
-  double pref_noise_0_MKT = 0.;
+  //double pref_noise_0_MKT = 0.;
+  std::unordered_map<double, double> pref_noise_0_MKT;
   /** Volume rescaling at half the time step.
    *  Stores @f$ \frac{\gamma^{V}}{Q}\cdot\frac{dt}{2} @f$.
    */
