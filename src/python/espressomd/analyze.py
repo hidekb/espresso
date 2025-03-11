@@ -449,27 +449,18 @@ class Analysis(ScriptInterfaceHelper):
 
     def get_instantaneous_pressure(self):
         observable = self.call_method("get_instantaneous_pressure")
-        #return self._generate_summary(observable, 9, True)
-        return observable
-
-    def get_instantaneous_pressure_tpdt(self):
-        observable = self.call_method("get_instantaneous_pressure_tpdt")
-        #return self._generate_summary(observable, 9, True)
         return observable
 
     def get_instantaneous_pressure_virial(self):
         observable = self.call_method("get_instantaneous_pressure_virial")
-        #return self._generate_summary(observable, 9, True)
         return observable
 
     def get_npt_volume(self):
         observable = self.call_method("get_nppt_volume")
-        #return self._generate_summary(observable, 9, True)
         return observable
 
     def get_kinetic_energy_for_volume(self):
         observable = self.call_method("get_kinetic_energy_for_volume")
-        #return self._generate_summary(observable, 9, True)
         return observable
 
     def energy(self):

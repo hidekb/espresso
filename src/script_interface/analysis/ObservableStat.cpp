@@ -151,10 +151,6 @@ Variant ObservableStat::do_call_method(std::string const &name,
     auto const obs = system.get_instantaneous_pressure();
     return obs;
   }
-  if (name == "get_instantaneous_pressure_tpdt") {
-    auto const obs = system.get_instantaneous_pressure_tpdt();
-    return obs;
-  }
   if (name == "get_npt_volume") {
     auto const obs = system.get_npt_volume();
     return obs;

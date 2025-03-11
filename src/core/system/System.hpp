@@ -153,9 +153,6 @@ public:
   /** @brief get the instantaneous pressure with (q(t+dt), p(t+dt/2))*/
   double get_instantaneous_pressure();
 
-  /** @brief get the instantaneous pressure with (q(t+dt), p(t+dt))*/
-  double get_instantaneous_pressure_tpdt();
-
   /** @brief get the instantaneous virial pressure with q(t+dt)*/
   double get_instantaneous_pressure_virial();
 

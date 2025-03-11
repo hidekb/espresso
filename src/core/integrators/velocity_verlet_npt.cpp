@@ -43,37 +43,54 @@
 
 static constexpr Utils::Vector3i nptgeom_dir{{1, 2, 4}};
 
+static void
+velocity_verlet_npt_propagate_vel_final(ParticleRangeNPT const &particles,
+                                        IsotropicNptThermostat const &npt_iso,
+                                        double time_step) {
+  auto &nptiso = *System::get_system().nptiso;
+  nptiso.p_vel = {};
+
+  for (auto &p : particles) {
+    //auto const noise = friction_therm0_nptiso<2>(npt_iso, p.v(), p.id());
+    for (unsigned int j = 0; j < 3; j++) {
+      if (!p.is_fixed_along(j)) {
+        if (nptiso.geometry & ::nptgeom_dir[j]) {
+          nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
+          p.v()[j] += p.force()[j] * time_step / 2.0 / p.mass();
+        } else {
+          // Propagate velocity: v(t+dt) = v(t+0.5*dt) + 0.5*dt * a(t+dt)
+          p.v()[j] += p.force()[j] * time_step / 2.0 / p.mass();
+        }
+      }
+    }
+  }
+}
+
 /** Scale and communicate instantaneous NpT pressure */
 static void
-velocity_verlet_npt_propagate_p_eps(IsotropicNptThermostat const &npt_iso,
+velocity_verlet_npt_finalize_p_inst(IsotropicNptThermostat const &npt_iso,
                                     double time_step) {
   /* finalize derivation of p_inst */
   auto &nptiso = *System::get_system().nptiso;
   nptiso.p_inst = 0.0;
-  //nptiso.p_inst_tpdt = 0.0;
   nptiso.p_inst_vir = 0.0;
   for (unsigned int i = 0; i < 3; i++) {
     if (nptiso.geometry & ::nptgeom_dir[i]) {
       nptiso.p_inst += nptiso.p_vir[i] + nptiso.p_vel[i];
-      //nptiso.p_inst_tpdt += nptiso.p_vir[i] + nptiso.p_vel_tpdt[i];
       nptiso.p_inst_vir  += nptiso.p_vir[i];
     }
   }
 
   double p_sum = 0.0;
   boost::mpi::reduce(comm_cart, nptiso.p_inst, p_sum, std::plus<double>(), 0);
-  //double p_sum_tpdt = 0.0;
-  //boost::mpi::reduce(comm_cart, nptiso.p_inst_tpdt, p_sum_tpdt, std::plus<double>(), 0);
   double p_sum_vir = 0.0;
   boost::mpi::reduce(comm_cart, nptiso.p_inst_vir, p_sum_vir, std::plus<double>(), 0);
   double p_epsilon = 0.0;
   if (this_node == 0) {
     nptiso.p_inst = p_sum / (nptiso.dimension * nptiso.volume);
-    //nptiso.p_inst_tpdt = p_sum_tpdt / (nptiso.dimension * nptiso.volume);
     nptiso.p_inst_vir  = p_sum_vir / (nptiso.dimension * nptiso.volume);
     p_epsilon = nptiso.p_epsilon;
-    p_epsilon += (nptiso.p_inst - nptiso.p_ext) * 1.5 * time_step * nptiso.volume;
-    p_epsilon += (1.0/(nptiso.particle_number - 1)) * (p_sum - p_sum_vir) * 0.5 * time_step;
+    p_epsilon += (nptiso.p_inst - nptiso.p_ext) * 0.5 * time_step;
   }
   boost::mpi::broadcast(comm_cart, p_epsilon, 0);
   nptiso.p_epsilon = p_epsilon;
@@ -81,84 +98,87 @@ velocity_verlet_npt_propagate_p_eps(IsotropicNptThermostat const &npt_iso,
 
 static void
 velocity_verlet_npt_propagate_pos(ParticleRangeNPT const &particles,
-				  IsotropicNptThermostat const &npt_iso,
-				  double time_step) {
-  for (auto &p : particles) {
-    for (unsigned int j = 0; j < 3; j++) {
-      if (!p.is_fixed_along(j)) {
-          p.pos()[j] = p.pos()[j] + p.v()[j] * 0.5 * time_step;
-      }
-    }
-  }
-}
-
-static void
-velocity_verlet_npt_propagate_pos_MTK(ParticleRangeNPT const &particles,
-                                      IsotropicNptThermostat const &npt_iso,
-                                      double time_step) {
-  auto &nptiso = *System::get_system().nptiso;
-  auto const propagator =
-	  std::exp(nptiso.inv_piston * nptiso.p_epsilon * 0.5 * time_step);
-
-  for (auto &p : particles) {
-    for (unsigned int j = 0; j < 3; j++) {
-      if (!p.is_fixed_along(j)) {
-        p.pos()[j] *= propagator;
-      }
-    }
-  }
-}
-
-static void
-velocity_verlet_npt_propagate_pos_V(ParticleRangeNPT const &particles,
-                                    IsotropicNptThermostat const &npt_iso,
-                                    double time_step, System::System &system) {
+                                  IsotropicNptThermostat const &npt_iso,
+                                  double time_step, System::System &system) {
 
   auto &box_geo = *system.box_geo;
   auto &cell_structure = *system.cell_structure;
   auto &nptiso = *system.nptiso;
   Utils::Vector3d scal{};
-  double L_new = 0.0;
+  double L_halfdt = 0.0;
+  double L_dt = 0.0;
 
-  /* 1st propagation pos_MTK and pos*/
-  velocity_verlet_npt_propagate_pos_MTK(particles, npt_iso, time_step);
-  velocity_verlet_npt_propagate_pos(particles, npt_iso, time_step);
+  /* finalize derivation of p_inst */
+  velocity_verlet_npt_finalize_p_inst(npt_iso, time_step);
 
-  /* stochastic reserviors for conjugate momentum for particles*/
+  /* 1st adjust \ref NptIsoParameters::nptiso.volume with dt/2; prepare pos-rescaling
+   */
+  if (this_node == 0) {
+    nptiso.volume += nptiso.inv_piston * nptiso.p_epsilon * 0.5 * time_step;
+    scal[2] = Utils::sqr(box_geo.length()[nptiso.non_const_dim]) /
+              pow(nptiso.volume, 2.0 / nptiso.dimension); // L_0**2 / L_halfdt**2
+    if (nptiso.volume < 0.0) {
+      runtimeErrorMsg()
+          << "your choice of piston= " << nptiso.piston << ", dt= " << time_step
+          << ", p_epsilon= " << nptiso.p_epsilon
+          << " just caused the volume to become negative, decrease dt";
+      nptiso.volume = box_geo.volume();
+      scal[2] = 1;
+    }
+
+    L_halfdt = pow(nptiso.volume, 1.0 / nptiso.dimension);
+
+    scal[1] = L_halfdt * box_geo.length_inv()[nptiso.non_const_dim];
+    scal[0] = 1. / scal[1];
+  }
+  boost::mpi::broadcast(comm_cart, scal, 0);
+
+  /* 1st propagate positions with dt/2 and rescaling pos*/
   for (auto &p : particles) {
-    auto const v_therm = propagate_therm0_nptiso<1>(npt_iso, p.v(), p.mass(), p.id());
     for (unsigned int j = 0; j < 3; j++) {
       if (!p.is_fixed_along(j)) {
-        //if (nptiso.geometry & ::nptgeom_dir[j]) {
-	p.v()[j] = v_therm[j];
-        //}
+        if (nptiso.geometry & ::nptgeom_dir[j]) {
+          p.pos()[j] = scal[1] * (p.pos()[j] + scal[2] * p.v()[j] * 0.5 * time_step);
+          p.pos_at_last_verlet_update()[j] *= scal[1];
+          p.v()[j] *= scal[0];
+        } else {
+          p.pos()[j] += p.v()[j] * 0.5 * time_step;
+        }
       }
     }
   }
 
   /* stochastic reserviors for conjugate momentum for V
-   * adjust \ref NptIsoParameters::nptiso.volume with dt/2 */
+   * 2nd adjust \ref NptIsoParameters::nptiso.volume with dt/2; prepare pos- and
+   * vel-rescaling
+   */
   nptiso.p_epsilon = propagate_thermV_nptiso(npt_iso, nptiso.p_epsilon, nptiso.piston);
-
-  /* propagate Volume */
   if (this_node == 0) {
-    nptiso.volume *= std::exp(3.0 * nptiso.inv_piston * nptiso.p_epsilon * time_step);
-    if (nptiso.volume < 0.0) {
-      runtimeErrorMsg()
-	  << "your choice of piston= " << nptiso.piston << ", dt= " << time_step
-	  << ", p_epsilon= " << nptiso.p_epsilon
-	  << " just caused the volume to become negative, decrease dt";
-    }
-    L_new = pow(nptiso.volume, 1.0 / nptiso.dimension);
+    nptiso.volume += nptiso.inv_piston * nptiso.p_epsilon * 0.5 * time_step;
+    L_dt = pow(nptiso.volume, 1.0 / nptiso.dimension);
+
+    scal[2] = 1.0;
+    scal[1] = L_dt / L_halfdt;
+    scal[0] = 1. / scal[1];
   }
+  boost::mpi::broadcast(comm_cart, scal, 0);
 
-  /* stochastic reserviors for conjugate momentum for V
-   * readjust \ref NptIsoParameters::nptiso.volume with dt/2 */
-  nptiso.p_epsilon = propagate_thermV_nptiso(npt_iso, nptiso.p_epsilon, nptiso.piston);
-
-  /* 2nd propagation pos and pos_MTK*/
-  velocity_verlet_npt_propagate_pos(particles, npt_iso, time_step);
-  velocity_verlet_npt_propagate_pos_MTK(particles, npt_iso, time_step);
+  /* 2nd propagate positions with dt/2 while rescaling positions and velocities */
+  for (auto &p : particles) {
+    auto const v_therm = propagate_therm0_nptiso(npt_iso, p.v(), p.mass(), p.id());
+    for (unsigned int j = 0; j < 3; j++) {
+      if (!p.is_fixed_along(j)) {
+        if (nptiso.geometry & ::nptgeom_dir[j]) {
+	  p.v()[j] = v_therm[j];
+          p.pos()[j] = scal[1] * (p.pos()[j] + scal[2] * p.v()[j] * 0.5 * time_step);
+          p.pos_at_last_verlet_update()[j] *= scal[1];
+          p.v()[j] *= scal[0];
+        } else {
+          p.pos()[j] += p.v()[j] * 0.5 * time_step;
+        }
+      }
+    }
+  }
 
   cell_structure.set_resort_particles(Cells::RESORT_LOCAL);
 
@@ -171,7 +191,7 @@ velocity_verlet_npt_propagate_pos_V(ParticleRangeNPT const &particles,
 
     for (unsigned int i = 0; i < 3; i++) {
       if (nptiso.cubic_box || nptiso.geometry & ::nptgeom_dir[i]) {
-        new_box[i] = L_new;
+        new_box[i] = L_dt;
       }
     }
   }
@@ -184,28 +204,6 @@ velocity_verlet_npt_propagate_pos_V(ParticleRangeNPT const &particles,
 }
 
 static void
-velocity_verlet_npt_propagate_vel_MTK(ParticleRangeNPT const &particles,
-                                      IsotropicNptThermostat const &npt_iso,
-                                      double time_step) {
-  auto &nptiso = *System::get_system().nptiso;
-  nptiso.p_vel = {};
-  auto const propagater =
-	  std::exp(-nptiso.inv_piston * nptiso.p_epsilon * 0.5 * time_step * 
-	       (1. + 1./(nptiso.particle_number - 1)));
-
-  for (auto &p : particles) {
-    for (unsigned int j = 0; j < 3; j++) {
-      if (!p.is_fixed_along(j)) {
-        //if (nptiso.geometry & ::nptgeom_dir[j]) {
-        p.v()[j] *= propagater;
-        nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
-        //}
-      }
-    }
-  }
-}
-
-static void
 velocity_verlet_npt_propagate_vel(ParticleRangeNPT const &particles,
                                   IsotropicNptThermostat const &npt_iso,
                                   double time_step) {
@@ -215,10 +213,19 @@ velocity_verlet_npt_propagate_vel(ParticleRangeNPT const &particles,
   for (auto &p : particles) {
     for (unsigned int j = 0; j < 3; j++) {
       if (!p.is_fixed_along(j)) {
-        p.v()[j] += p.force()[j] * 0.5 * time_step / p.mass();
-        //if (nptiso.geometry & ::nptgeom_dir[j]) {
-        nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
-        //}
+	/*
+        auto const noise = friction_therm0_nptiso<1>(npt_iso, p.v(), p.id());
+        if (nptiso.geometry & ::nptgeom_dir[j]) {
+          p.v()[j] += (p.force()[j] * time_step / 2.0 + noise[j]) / p.mass();
+          nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
+        } else {
+          p.v()[j] += p.force()[j] * time_step / 2.0 / p.mass();
+        }
+	*/
+        p.v()[j] += p.force()[j] * time_step / 2.0 / p.mass();
+        if (nptiso.geometry & ::nptgeom_dir[j]) {
+          nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
+        }
       }
     }
   }
@@ -227,18 +234,15 @@ velocity_verlet_npt_propagate_vel(ParticleRangeNPT const &particles,
 void velocity_verlet_npt_step_1(ParticleRangeNPT const &particles,
                                 IsotropicNptThermostat const &npt_iso,
                                 double time_step, System::System &system) {
-  velocity_verlet_npt_propagate_vel_MTK(particles, npt_iso, time_step);
-  velocity_verlet_npt_propagate_p_eps(npt_iso, time_step);
   velocity_verlet_npt_propagate_vel(particles, npt_iso, time_step);
-  velocity_verlet_npt_propagate_pos_V(particles, npt_iso, time_step, system);
+  velocity_verlet_npt_propagate_pos(particles, npt_iso, time_step, system);
 }
 
 void velocity_verlet_npt_step_2(ParticleRangeNPT const &particles,
                                 IsotropicNptThermostat const &npt_iso,
                                 double time_step) {
-  velocity_verlet_npt_propagate_vel(particles, npt_iso, time_step);
-  velocity_verlet_npt_propagate_p_eps(npt_iso, time_step);
-  velocity_verlet_npt_propagate_vel_MTK(particles, npt_iso, time_step);
+  velocity_verlet_npt_propagate_vel_final(particles, npt_iso, time_step);
+  velocity_verlet_npt_finalize_p_inst(npt_iso, time_step);
 }
 
 #endif // NPT

@@ -52,7 +52,7 @@ class IntegratorNPT(ut.TestCase):
             epsilon=1, sigma=1, cutoff=1.12246, shift=0.25)
 
         system.thermostat.set_npt(kT=1.0, gamma0=2, gammav=0.004, seed=42)
-        system.integrator.set_isotropic_npt(ext_pressure=p_ext, piston=4.0)
+        system.integrator.set_isotropic_npt(ext_pressure=p_ext, piston=0.0001)
 
         system.integrator.run(800)
         avp = 0

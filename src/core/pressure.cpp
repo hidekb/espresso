@@ -125,9 +125,6 @@ std::shared_ptr<Observable_stat> System::calculate_pressure() {
 double System::get_instantaneous_pressure() {
   return nptiso->p_inst;
 }
-double System::get_instantaneous_pressure_tpdt() {
-  return nptiso->p_inst_tpdt;
-}
 double System::get_instantaneous_pressure_virial() {
   return nptiso->p_inst_vir;
 }
