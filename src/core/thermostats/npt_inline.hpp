@@ -44,12 +44,13 @@
  */
 inline Utils::Vector3d
 propagate_therm0_nptiso(IsotropicNptThermostat const &npt_iso,
-                        Utils::Vector3d const &vel, double mass, int p_identity) {
+                        Utils::Vector3d const &vel, double mass,
+                        int p_identity) {
   if (npt_iso.pref_noise_0.at(mass) > 0.0) {
     return npt_iso.pref_rescale_0.at(mass) * vel +
            npt_iso.pref_noise_0.at(mass) *
                Random::noise_gaussian<RNGSalt::NPTISO_PARTICLE_1>(
-			       npt_iso.rng_counter(), npt_iso.rng_seed(), p_identity);
+                   npt_iso.rng_counter(), npt_iso.rng_seed(), p_identity);
   }
   return npt_iso.pref_rescale_0.at(mass) * vel;
 }

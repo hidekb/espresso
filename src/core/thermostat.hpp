@@ -280,12 +280,14 @@ public:
    *  Needs to be called every time the parameters are changed.
    */
   void recalc_prefactors(double kT, double piston,
-		  std::vector<double> const &mass_list, double time_step) {
+                         std::vector<double> const &mass_list,
+                         double time_step) {
     assert(piston > 0.0);
 
-    for (const auto& mass : mass_list) {
+    for (const auto &mass : mass_list) {
       pref_rescale_0[mass] = std::exp(-gamma0 * time_step / mass);
-      pref_noise_0[mass] = sigma_OU(kT, gamma0 / mass, time_step) / std::sqrt(mass);
+      pref_noise_0[mass] =
+          sigma_OU(kT, gamma0 / mass, time_step) / std::sqrt(mass);
     }
     pref_rescale_V = std::exp(-gammav * time_step / piston);
     pref_noise_V = sigma_OU(kT, gammav / piston, time_step) * std::sqrt(piston);
@@ -306,7 +308,7 @@ public:
    *  Evaluates the quantity @f$ \sqrt{k_B T (1 - \exp(-2 \gamma dt)} @f$
    */
   static double sigma_OU(double kT, double gamma, double time_step) {
-    return sqrt(kT * (1.0 - std::exp(- 2 * gamma * time_step)));
+    return sqrt(kT * (1.0 - std::exp(-2 * gamma * time_step)));
   }
   /** @name Parameters */
   /**@{*/
@@ -326,7 +328,7 @@ public:
    *  Orstein-Uhlenbeck equation.
    *  Stores @f$ \sqrt{k_B T ( 1 - \exp( -2 \frac{\gamma^{0}}{m} dt}) @f$
    */
-  //double pref_noise_0_MKT = 0.;
+  // double pref_noise_0_MKT = 0.;
   std::unordered_map<double, double> pref_noise_0;
   /** Volume rescaling at half the time step.
    *  Stores @f$ \exp(-\frac{\gamma^{V}}{W} \cdot dt) @f$.
@@ -336,7 +338,7 @@ public:
    *  Orstein-Uhlenbeck equation
    *  Stores @f$ \sqrt{k_B T ( 1 - \exp( -2 \frac{\gamma^{0}}{W} dt}) @f$
    */
-  double pref_noise_V  = 0.;
+  double pref_noise_V = 0.;
   /**@}*/
 };
 #endif

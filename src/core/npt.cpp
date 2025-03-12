@@ -39,8 +39,6 @@
 
 static constexpr Utils::Vector3i nptgeom_dir{{1, 2, 4}};
 
-//NptIsoParameters nptiso = {};
-
 void synchronize_npt_state() {
   auto &nptiso = *System::get_system().nptiso;
   boost::mpi::broadcast(comm_cart, nptiso.p_inst, 0);
@@ -121,9 +119,10 @@ void npt_ensemble_init(Utils::Vector3d const &box_l, bool recalc_forces) {
     nptiso.p_vel = Utils::Vector3d{};
   }
   unsigned int particle_number =
-	  System::get_system().cell_structure->local_particles().size();
+      System::get_system().cell_structure->local_particles().size();
   unsigned int n_sum;
-  boost::mpi::reduce(comm_cart, particle_number, n_sum, std::plus<unsigned int>(), 0);
+  boost::mpi::reduce(comm_cart, particle_number, n_sum,
+                     std::plus<unsigned int>(), 0);
   if (this_node == 0) {
     particle_number = n_sum;
   }
@@ -135,18 +134,20 @@ void npt_ensemble_init(Utils::Vector3d const &box_l, bool recalc_forces) {
     local_mass.push_back(p.mass());
   }
   std::sort(local_mass.begin(), local_mass.end());
-  local_mass.erase(std::unique(local_mass.begin(), local_mass.end()), local_mass.end());
+  local_mass.erase(std::unique(local_mass.begin(), local_mass.end()),
+                   local_mass.end());
 
   std::vector<std::vector<double>> gathered_mass;
   boost::mpi::gather(comm_cart, local_mass, gathered_mass, 0);
-  //Merge mass_list
+  // Merge mass_list
   std::vector<double> merged_mass;
   if (this_node == 0) {
-    for (const auto& vec : gathered_mass) {
+    for (const auto &vec : gathered_mass) {
       merged_mass.insert(merged_mass.end(), vec.begin(), vec.end());
     }
     std::sort(merged_mass.begin(), merged_mass.end());
-    merged_mass.erase(std::unique(merged_mass.begin(), merged_mass.end()), merged_mass.end());
+    merged_mass.erase(std::unique(merged_mass.begin(), merged_mass.end()),
+                      merged_mass.end());
   }
   boost::mpi::broadcast(comm_cart, merged_mass, 0);
   nptiso.mass_list = merged_mass;

@@ -139,22 +139,24 @@ class IntegratorNPT(ut.TestCase):
 
         system.integrator.run(1)
 
-        ref_vel = V0*np.exp(-GAMMA0*DT)
-        ref_pos = (V0 - ref_vel)/GAMMA0
+        ref_vel = V0 * np.exp(-GAMMA0 * DT)
+        ref_pos = (V0 - ref_vel) / GAMMA0
 
         np.testing.assert_almost_equal(np.copy(physical.f), [0., 0., 0.])
         np.testing.assert_almost_equal(np.copy(physical.v), [ref_vel, 0., 0.])
-        np.testing.assert_almost_equal(np.copy(physical.pos), [ref_pos, 0., 0.])
+        np.testing.assert_almost_equal(
+            np.copy(physical.pos), [ref_pos, 0., 0.])
         np.testing.assert_almost_equal(np.copy(virtual.f), [0., 0., 0.])
         np.testing.assert_almost_equal(np.copy(virtual.v), [ref_vel, 0., 0.])
-        np.testing.assert_almost_equal(np.copy(virtual.pos), [ref_pos, 0., 0.1])
+        np.testing.assert_almost_equal(
+            np.copy(virtual.pos), [ref_pos, 0., 0.1])
 
     @utx.skipIfMissingFeatures(["LENNARD_JONES"])
     def test_09_integrator_recovery(self):
         # the system is still in a valid state after a failure
         system = self.system
         np.random.seed(42)
-        npt_params = {'ext_pressure': 0.01, 'piston':0.001}
+        npt_params = {'ext_pressure': 0.01, 'piston': 0.001}
         system.box_l = [8] * 3
         system.part.add(pos=np.random.uniform(0, system.box_l[0], (11, 3)))
         system.non_bonded_inter[0, 0].lennard_jones.set_params(
@@ -163,7 +165,7 @@ class IntegratorNPT(ut.TestCase):
         system.integrator.set_isotropic_npt(**npt_params)
         # compressibility \kappa_T for this system with ext_pressure = 0.01
         KAPPA_T = 109
-        
+
         # get the equilibrium box length for the chosen NpT parameters
         system.integrator.run(500)
         # catch unstable simulation early (when the DP3M test case ran first)
@@ -180,7 +182,7 @@ class IntegratorNPT(ut.TestCase):
         # the core state is unchanged
         system.integrator.run(500)
         # tolerance error based on compressibility
-        DELTA = (KAPPA_T*box_l_ref)**(1./6.)
+        DELTA = (KAPPA_T * box_l_ref)**(1. / 6.)
         self.assertAlmostEqual(system.box_l[0], box_l_ref, delta=DELTA)
 
         # setting another integrator with incorrect values doesn't leave the

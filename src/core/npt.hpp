@@ -83,8 +83,6 @@ struct NptIsoParameters {
   Utils::Vector<bool, 3> get_direction() const;
 };
 
-//extern NptIsoParameters nptiso;
-
 /** @brief Synchronizes NpT state such as instantaneous and average pressure
  */
 void synchronize_npt_state();

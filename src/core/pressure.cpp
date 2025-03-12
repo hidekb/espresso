@@ -122,16 +122,12 @@ std::shared_ptr<Observable_stat> System::calculate_pressure() {
   obs_pressure.mpi_reduce();
   return obs_pressure_ptr;
 }
-double System::get_instantaneous_pressure() {
-  return nptiso->p_inst;
-}
+double System::get_instantaneous_pressure() { return nptiso->p_inst; }
 double System::get_instantaneous_pressure_virial() {
   return nptiso->p_inst_vir;
 }
-double System::get_npt_volume() {
-  return nptiso->volume;
-}
+double System::get_npt_volume() { return nptiso->volume; }
 double System::get_kinetic_energy_for_volume() {
-  return 0.5*nptiso->p_epsilon*nptiso->p_epsilon/nptiso->piston;
+  return 0.5 * nptiso->p_epsilon * nptiso->p_epsilon / nptiso->piston;
 }
 } // namespace System
