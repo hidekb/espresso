@@ -57,6 +57,7 @@ velocity_verlet_npt_propagate_vel_final(ParticleRangeNPT const &particles,
           nptiso.p_vel[j] += Utils::sqr(p.v()[j]) * p.mass();
           p.v()[j] += p.force()[j] * time_step / 2.0 / p.mass();
         } else {
+	  // Propagate velocity: v(t+dt) = v(t+0.5*dt) + 0.5*dt * a(t+dt)
           p.v()[j] += p.force()[j] * time_step / 2.0 / p.mass();
         }
       }
