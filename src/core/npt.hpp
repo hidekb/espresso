@@ -47,11 +47,11 @@ struct NptIsoParameters {
   std::vector<double> mass_list;
   /** desired pressure to which the algorithm strives to */
   double p_ext = 0.;
-  /** instantaneous pressure the system with (q(t+dt), p(t+dt/2)) has */
+  /** instantaneous pressure the system currently has */
   double p_inst = 0.;
-  /** instantaneous virial pressure the system with q(t+dt) has */
+  /** instantaneous virial pressure the system with currently has */
   double p_inst_vir = 0.;
-  /** momentum for volume */
+  /** conjugate momentum of volume */
   double p_epsilon = 0.;
   /** virial (short-range) components of \ref p_inst */
   Utils::Vector3d p_vir = {0., 0., 0.};
