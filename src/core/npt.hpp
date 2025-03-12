@@ -45,8 +45,6 @@ struct NptIsoParameters {
   double volume = 0.;
   /** list of particle mass */
   std::vector<double> mass_list;
-  /** number of particle */
-  int particle_number = 0;
   /** desired pressure to which the algorithm strives to */
   double p_ext = 0.;
   /** instantaneous pressure the system with (q(t+dt), p(t+dt/2)) has */

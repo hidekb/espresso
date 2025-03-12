@@ -118,16 +118,6 @@ void npt_ensemble_init(Utils::Vector3d const &box_l, bool recalc_forces) {
     nptiso.p_vir = Utils::Vector3d{};
     nptiso.p_vel = Utils::Vector3d{};
   }
-  unsigned int particle_number =
-      System::get_system().cell_structure->local_particles().size();
-  unsigned int n_sum;
-  boost::mpi::reduce(comm_cart, particle_number, n_sum,
-                     std::plus<unsigned int>(), 0);
-  if (this_node == 0) {
-    particle_number = n_sum;
-  }
-  boost::mpi::broadcast(comm_cart, particle_number, 0);
-  nptiso.particle_number = particle_number;
 
   std::vector<double> local_mass;
   for (auto &p : System::get_system().cell_structure->local_particles()) {

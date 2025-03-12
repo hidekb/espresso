@@ -75,18 +75,19 @@ velocity_verlet_npt_finalize_p_inst(IsotropicNptThermostat const &npt_iso,
   for (unsigned int i = 0; i < 3; i++) {
     if (nptiso.geometry & ::nptgeom_dir[i]) {
       nptiso.p_inst += nptiso.p_vir[i] + nptiso.p_vel[i];
-      nptiso.p_inst_vir  += nptiso.p_vir[i];
+      nptiso.p_inst_vir += nptiso.p_vir[i];
     }
   }
 
   double p_sum = 0.0;
   boost::mpi::reduce(comm_cart, nptiso.p_inst, p_sum, std::plus<double>(), 0);
   double p_sum_vir = 0.0;
-  boost::mpi::reduce(comm_cart, nptiso.p_inst_vir, p_sum_vir, std::plus<double>(), 0);
+  boost::mpi::reduce(comm_cart, nptiso.p_inst_vir, p_sum_vir,
+                     std::plus<double>(), 0);
   double p_epsilon = 0.0;
   if (this_node == 0) {
     nptiso.p_inst = p_sum / (nptiso.dimension * nptiso.volume);
-    nptiso.p_inst_vir  = p_sum_vir / (nptiso.dimension * nptiso.volume);
+    nptiso.p_inst_vir = p_sum_vir / (nptiso.dimension * nptiso.volume);
     p_epsilon = nptiso.p_epsilon;
     p_epsilon += (nptiso.p_inst - nptiso.p_ext) * 0.5 * time_step;
   }
@@ -109,12 +110,14 @@ velocity_verlet_npt_propagate_pos(ParticleRangeNPT const &particles,
   /* finalize derivation of p_inst */
   velocity_verlet_npt_finalize_p_inst(npt_iso, time_step);
 
-  /* 1st adjust \ref NptIsoParameters::nptiso.volume with dt/2; prepare pos-rescaling
+  /* 1st adjust \ref NptIsoParameters::nptiso.volume with dt/2; prepare
+   * pos-rescaling
    */
   if (this_node == 0) {
     nptiso.volume += nptiso.inv_piston * nptiso.p_epsilon * 0.5 * time_step;
-    scal[2] = Utils::sqr(box_geo.length()[nptiso.non_const_dim]) /
-              pow(nptiso.volume, 2.0 / nptiso.dimension); // L_0**2 / L_halfdt**2
+    scal[2] =
+        Utils::sqr(box_geo.length()[nptiso.non_const_dim]) /
+        pow(nptiso.volume, 2.0 / nptiso.dimension); // L_0**2 / L_halfdt**2
     if (nptiso.volume < 0.0) {
       runtimeErrorMsg()
           << "your choice of piston= " << nptiso.piston << ", dt= " << time_step
@@ -136,7 +139,8 @@ velocity_verlet_npt_propagate_pos(ParticleRangeNPT const &particles,
     for (unsigned int j = 0; j < 3; j++) {
       if (!p.is_fixed_along(j)) {
         if (nptiso.geometry & ::nptgeom_dir[j]) {
-          p.pos()[j] = scal[1] * (p.pos()[j] + scal[2] * p.v()[j] * 0.5 * time_step);
+          p.pos()[j] =
+              scal[1] * (p.pos()[j] + scal[2] * p.v()[j] * 0.5 * time_step);
           p.pos_at_last_verlet_update()[j] *= scal[1];
           p.v()[j] *= scal[0];
         } else {
@@ -150,7 +154,8 @@ velocity_verlet_npt_propagate_pos(ParticleRangeNPT const &particles,
    * 2nd adjust \ref NptIsoParameters::nptiso.volume with dt/2; prepare pos- and
    * vel-rescaling
    */
-  nptiso.p_epsilon = propagate_thermV_nptiso(npt_iso, nptiso.p_epsilon, nptiso.piston);
+  nptiso.p_epsilon =
+      propagate_thermV_nptiso(npt_iso, nptiso.p_epsilon, nptiso.piston);
   if (this_node == 0) {
     nptiso.volume += nptiso.inv_piston * nptiso.p_epsilon * 0.5 * time_step;
     L_dt = pow(nptiso.volume, 1.0 / nptiso.dimension);
@@ -161,14 +166,17 @@ velocity_verlet_npt_propagate_pos(ParticleRangeNPT const &particles,
   }
   boost::mpi::broadcast(comm_cart, scal, 0);
 
-  /* 2nd propagate positions with dt/2 while rescaling positions and velocities */
+  /* 2nd propagate positions with dt/2 while rescaling positions and velocities
+   */
   for (auto &p : particles) {
-    auto const v_therm = propagate_therm0_nptiso(npt_iso, p.v(), p.mass(), p.id());
+    auto const v_therm =
+        propagate_therm0_nptiso(npt_iso, p.v(), p.mass(), p.id());
     for (unsigned int j = 0; j < 3; j++) {
       if (!p.is_fixed_along(j)) {
         if (nptiso.geometry & ::nptgeom_dir[j]) {
-	  p.v()[j] = v_therm[j];
-          p.pos()[j] = scal[1] * (p.pos()[j] + scal[2] * p.v()[j] * 0.5 * time_step);
+          p.v()[j] = v_therm[j];
+          p.pos()[j] =
+              scal[1] * (p.pos()[j] + scal[2] * p.v()[j] * 0.5 * time_step);
           p.pos_at_last_verlet_update()[j] *= scal[1];
           p.v()[j] *= scal[0];
         } else {
