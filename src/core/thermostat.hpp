@@ -317,11 +317,13 @@ public:
   /**@}*/
   /** @name Prefactors */
   /**@{*/
-  /** Particle velocity rescaling at the time step for MKT.
+  /** Particle velocity rescaling at the time step for
+   *  Orstein-Uhlenbeck equation.
    *  Stores @f$ \exp(-\frac{\gamma^{0}}{m} \cdot dt) @f$.
    */
   std::unordered_map<double, double> pref_rescale_0;
-  /** Particle velocity rescaling noise standard deviation for MKT
+  /** Particle velocity rescaling noise standard deviation for
+   *  Orstein-Uhlenbeck equation.
    *  Stores @f$ \sqrt{k_B T ( 1 - \exp( -2 \frac{\gamma^{0}}{m} dt}) @f$
    */
   //double pref_noise_0_MKT = 0.;
@@ -330,7 +332,8 @@ public:
    *  Stores @f$ \exp(-\frac{\gamma^{V}}{W} \cdot dt) @f$.
    */
   double pref_rescale_V = 0.;
-  /** Volume rescaling noise standard deviation for MKT
+  /** Volume rescaling noise standard deviation for
+   *  Orstein-Uhlenbeck equation
    *  Stores @f$ \sqrt{k_B T ( 1 - \exp( -2 \frac{\gamma^{0}}{W} dt}) @f$
    */
   double pref_noise_V  = 0.;

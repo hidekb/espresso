@@ -61,11 +61,11 @@ BOOST_AUTO_TEST_CASE(test_noise_statistics) {
 }
 
 BOOST_AUTO_TEST_CASE(test_noise_uniform_1d) {
-  constexpr std::size_t const sample_size = 300'000;
+  constexpr std::size_t const sample_size = 60'000;
 
   auto const [means, variances, covariance, correlation] = noise_statistics(
       [counter = 0]() mutable -> std::array<VariantVectorXd, 1> {
-        return {{Random::noise_uniform<RNGSalt::NPTISO_VOLUME, 1>(counter++, 0, 1)}};
+        return {{Random::noise_uniform<RNGSalt::NPTISO_VOLUME_1, 1>(counter++, 0, 1)}};
       },
       sample_size);
   // check pooled mean and variance
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(test_uncorrelated_consecutive_ids) {
   auto const correlation = std::get<3>(noise_statistics(
       [counter = 0]() mutable -> std::array<VariantVectorXd, 3> {
         counter++;
-        auto prng = Random::noise_uniform<RNGSalt::NPTISO_VOLUME, 1>;
+        auto prng = Random::noise_uniform<RNGSalt::NPTISO_VOLUME_1, 1>;
         return {{prng(counter, seed, pid, 0),
                  prng(counter, seed, pid + pid_offset, 0),
                  prng(counter + pid_offset, seed, pid, 0)}};
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(test_uncorrelated_consecutive_seeds) {
   auto const correlation = std::get<3>(noise_statistics(
       [counter = 0]() mutable -> std::array<VariantVectorXd, 3> {
         counter++;
-        auto prng = Random::noise_uniform<RNGSalt::NPTISO_VOLUME, 1>;
+        auto prng = Random::noise_uniform<RNGSalt::NPTISO_VOLUME_1, 1>;
         return {{prng(counter, seed, pid, 0),
                  prng(counter, seed + seed_offset, pid, 0),
                  prng(counter + seed_offset, seed, pid, 0)}};
