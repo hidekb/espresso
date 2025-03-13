@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(test_noise_uniform_1d) {
   auto const [means, variances, covariance, correlation] = noise_statistics(
       [counter = 0]() mutable -> std::array<VariantVectorXd, 1> {
         return {{Random::noise_uniform<RNGSalt::NPTISO_VOLUME, 1>(counter++, 0,
-								  1)}};
+                                                                  1)}};
       },
       sample_size);
   // check pooled mean and variance
