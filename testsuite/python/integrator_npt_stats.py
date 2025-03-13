@@ -69,14 +69,14 @@ class IntegratorNPT(ut.TestCase):
                 volume = float(np.prod(system.box_l))
                 pressure = system.analysis.pressure()
                 avp += pressure['total']
-                avpV_sim += pressure['kinetic']*volume
+                avpV_sim += pressure['kinetic'] * volume
                 avp_sim_vir += pressure['non_bonded']
 
                 p_inst_vir = system.analysis.get_instantaneous_pressure_virial()
                 avp_inst_vir += p_inst_vir
                 p_inst = system.analysis.get_instantaneous_pressure()
                 p_inst_kin = p_inst - p_inst_vir
-                avpV_inst += p_inst_kin*volume
+                avpV_inst += p_inst_kin * volume
             ls[t] = system.box_l[0]
 
         avp /= (n / skip_p)
