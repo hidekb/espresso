@@ -65,7 +65,7 @@ class AutoUpdateAccumulators;
 namespace Constraints {
 class Constraints;
 }
-class NptIsoParameters;
+struct NptIsoParameters;
 
 namespace System {
 
