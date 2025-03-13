@@ -455,14 +455,6 @@ class Analysis(ScriptInterfaceHelper):
         observable = self.call_method("get_instantaneous_pressure_virial")
         return observable
 
-    def get_npt_volume(self):
-        observable = self.call_method("get_nppt_volume")
-        return observable
-
-    def get_kinetic_energy_for_volume(self):
-        observable = self.call_method("get_kinetic_energy_for_volume")
-        return observable
-
     def energy(self):
         """
         Calculate the system energy in parallel.

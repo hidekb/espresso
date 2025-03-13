@@ -151,14 +151,6 @@ Variant ObservableStat::do_call_method(std::string const &name,
     auto const obs = system.get_instantaneous_pressure();
     return obs;
   }
-  if (name == "get_npt_volume") {
-    auto const obs = system.get_npt_volume();
-    return obs;
-  }
-  if (name == "get_kinetic_energy_for_volume") {
-    auto const obs = system.get_kinetic_energy_for_volume();
-    return obs;
-  }
   if (name == "get_instantaneous_pressure_virial") {
     auto const obs = system.get_instantaneous_pressure_virial();
     return obs;

@@ -40,7 +40,7 @@ class IntegratorNPT(ut.TestCase):
         self.system.thermostat.turn_off()
         self.system.integrator.set_vv()
 
-    def test_compressibility(self):
+    def test_compressibility_and_pressure(self):
         system = self.system
         system.box_l = [5.86326165] * 3
 
@@ -56,21 +56,42 @@ class IntegratorNPT(ut.TestCase):
 
         system.integrator.run(800)
         avp = 0
+        avpV_sim = 0
+        avp_sim_vir = 0
+        avpV_inst = 0
+        avp_inst_vir = 0
         n = 30000
         skip_p = 8
         ls = np.zeros(n)
         for t in range(n):
             system.integrator.run(2)
             if t % skip_p == 0:
-                avp += system.analysis.pressure()['total']
+                volume = float(np.prod(system.box_l))
+                pressure = system.analysis.pressure()
+                avp += pressure['total']
+                avpV_sim += pressure['kinetic']*volume
+                avp_sim_vir += pressure['non_bonded']
+
+                p_inst_vir = system.analysis.get_instantaneous_pressure_virial()
+                avp_inst_vir += p_inst_vir
+                p_inst = system.analysis.get_instantaneous_pressure()
+                p_inst_kin = p_inst - p_inst_vir
+                avpV_inst += p_inst_kin*volume
             ls[t] = system.box_l[0]
 
         avp /= (n / skip_p)
+        avpV_sim /= (n / skip_p)
+        avp_sim_vir /= (n / skip_p)
+        avpV_inst /= (n / skip_p)
+        avp_inst_vir /= (n / skip_p)
         Vs = np.array(ls)**3
         compressibility = np.var(Vs) / np.average(Vs)
 
         self.assertAlmostEqual(avp, p_ext, delta=0.02)
         self.assertAlmostEqual(compressibility, 0.49, delta=0.05)
+        np.testing.assert_allclose(avp_sim_vir, avp_inst_vir, atol=1e-10)
+        self.assertAlmostEqual(avpV_sim, 100, delta=0.2)
+        self.assertAlmostEqual(avpV_inst, 100, delta=0.2)
 
 
 if __name__ == "__main__":

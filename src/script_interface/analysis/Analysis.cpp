@@ -290,12 +290,6 @@ Variant Analysis::do_call_method(std::string const &name,
   if (name == "get_instantaneous_pressure") {
     return m_obs_stat->do_call_method("get_instantaneous_pressure", {});
   }
-  if (name == "get_npt_volume") {
-    return m_obs_stat->do_call_method("get_npt_volume", {});
-  }
-  if (name == "get_kinetic_energy_for_volume") {
-    return m_obs_stat->do_call_method("get_kinetic_energy_for_volume", {});
-  }
   if (name == "get_instantaneous_pressure_virial") {
     return m_obs_stat->do_call_method("get_instantaneous_pressure_virial", {});
   }
