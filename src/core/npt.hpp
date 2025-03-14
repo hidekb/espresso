@@ -31,7 +31,8 @@
 #include <utils/Vector.hpp>
 
 /** Parameters of the isotropic NpT-integration scheme. */
-struct NptIsoParameters {
+class NptIsoParameters {
+public:
   NptIsoParameters() = default;
   NptIsoParameters(double ext_pressure, double piston,
                    Utils::Vector<bool, 3> const &rescale, bool cubic_box);
