@@ -85,6 +85,7 @@ velocity_verlet_npt_finalize_p_inst(IsotropicNptThermostat const &npt_iso,
   double p_sum_vir = 0.0;
   boost::mpi::reduce(comm_cart, nptiso.p_inst_vir, p_sum_vir,
                      std::plus<double>(), 0);
+  /* propagate p_epsilon */
   double p_epsilon = 0.0;
   if (this_node == 0) {
     nptiso.p_inst = p_sum / (nptiso.dimension * nptiso.volume);
@@ -108,8 +109,8 @@ velocity_verlet_npt_propagate_pos(ParticleRangeNPT const &particles,
   double L_halfdt = 0.0;
   double L_dt = 0.0;
 
-  /* finalize derivation of p_inst */
-  velocity_verlet_npt_finalize_p_inst(npt_iso, time_step);
+  /* finalize derivation of p_inst and propagate p_epsilon*/
+  velocity_verlet_npt_finalize_p_epsilon(npt_iso, time_step);
 
   /* 1st adjust \ref NptIsoParameters::nptiso.volume with dt/2; prepare
    * pos-rescaling
@@ -151,7 +152,7 @@ velocity_verlet_npt_propagate_pos(ParticleRangeNPT const &particles,
     }
   }
 
-  /* stochastic reserviors for conjugate momentum for V
+  /* stochastic reserviors for conjugate momentum for Vi and
    * 2nd adjust \ref NptIsoParameters::nptiso.volume with dt/2; prepare pos- and
    * vel-rescaling
    */
@@ -167,7 +168,8 @@ velocity_verlet_npt_propagate_pos(ParticleRangeNPT const &particles,
   }
   boost::mpi::broadcast(comm_cart, scal, 0);
 
-  /* 2nd propagate positions with dt/2 while rescaling positions and velocities
+  /* stochastic reserviors for velocities and
+   * 2nd propagate positions with dt/2 while rescaling positions velocities
    */
   for (auto &p : particles) {
     auto const v_therm =
