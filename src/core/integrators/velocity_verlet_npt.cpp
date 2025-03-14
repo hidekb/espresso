@@ -65,7 +65,9 @@ velocity_verlet_npt_propagate_vel_final(ParticleRangeNPT const &particles,
   }
 }
 
-/** Scale and communicate instantaneous NpT pressure */
+/** Scale and communicate instantaneous NpT pressure and
+ *  propagate the conjugate momentum for volume
+ * */
 static void
 velocity_verlet_npt_finalize_p_inst(IsotropicNptThermostat const &npt_iso,
                                     double time_step) {
@@ -110,7 +112,7 @@ velocity_verlet_npt_propagate_pos(ParticleRangeNPT const &particles,
   double L_dt = 0.0;
 
   /* finalize derivation of p_inst and propagate p_epsilon*/
-  velocity_verlet_npt_finalize_p_epsilon(npt_iso, time_step);
+  velocity_verlet_npt_finalize_p_inst(npt_iso, time_step);
 
   /* 1st adjust \ref NptIsoParameters::nptiso.volume with dt/2; prepare
    * pos-rescaling
