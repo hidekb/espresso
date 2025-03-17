@@ -83,7 +83,9 @@ System::System(Private) {
   auto_update_accumulators =
       std::make_shared<Accumulators::AutoUpdateAccumulators>();
   constraints = std::make_shared<Constraints::Constraints>();
+#ifdef NPT
   nptiso = std::make_shared<NptIsoParameters>();
+#endif
   reinit_thermo = true;
   time_step = -1.;
   sim_time = 0.;

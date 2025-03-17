@@ -150,11 +150,13 @@ public:
   /** @brief Calculate the pressure from a virial expansion. */
   std::shared_ptr<Observable_stat> calculate_pressure();
 
+#ifdef NPT
   /** @brief get the instantaneous pressure with (q(t+dt), p(t+dt/2))*/
   double get_instantaneous_pressure();
 
   /** @brief get the instantaneous virial pressure with q(t+dt)*/
   double get_instantaneous_pressure_virial();
+#endif
 
   /** @brief Calculate all forces. */
   void calculate_forces();
@@ -301,7 +303,9 @@ public:
   std::shared_ptr<Accumulators::AutoUpdateAccumulators>
       auto_update_accumulators;
   std::shared_ptr<Constraints::Constraints> constraints;
+#ifdef NPT
   std::shared_ptr<NptIsoParameters> nptiso;
+#endif
 
 protected:
   /** @brief Whether the thermostat has to be reinitialized before integration.

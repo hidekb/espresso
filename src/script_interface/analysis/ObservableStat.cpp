@@ -148,12 +148,22 @@ Variant ObservableStat::do_call_method(std::string const &name,
     return get_summary(system, *obs, false);
   }
   if (name == "get_instantaneous_pressure") {
+#ifdef NPT
     auto const obs = system.get_instantaneous_pressure();
     return obs;
+#else
+    throw std::runtime_error(
+          "instantaneous pressure cannot be calculated without NPT");
+#endif
   }
   if (name == "get_instantaneous_pressure_virial") {
+#ifdef NPT
     auto const obs = system.get_instantaneous_pressure_virial();
     return obs;
+#else
+    throw std::runtime_error(
+          "instantaneous pressure cannot be calculated without NPT");
+#endif
   }
   return {};
 }

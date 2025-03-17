@@ -122,8 +122,10 @@ std::shared_ptr<Observable_stat> System::calculate_pressure() {
   obs_pressure.mpi_reduce();
   return obs_pressure_ptr;
 }
+#ifdef NPT
 double System::get_instantaneous_pressure() { return nptiso->p_inst; }
 double System::get_instantaneous_pressure_virial() {
   return nptiso->p_inst_vir;
 }
+#endif
 } // namespace System
