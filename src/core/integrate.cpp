@@ -395,7 +395,7 @@ static bool integrator_step_1(ParticleRange const &particles,
 
 static void integrator_step_2(ParticleRange const &particles,
                               Propagation const &propagation,
-                              //Thermostat::Thermostat const &thermostat,
+                              // Thermostat::Thermostat const &thermostat,
                               double time_step) {
   if (propagation.integ_switch == INTEG_METHOD_STEEPEST_DESCENT)
     return;
@@ -591,7 +591,7 @@ int System::System::integrate(int n_steps, int reuse_forces) {
                                              *local_geo, lb);
     }
 #endif
-    //integrator_step_2(particles, propagation, *thermostat, time_step);
+    // integrator_step_2(particles, propagation, *thermostat, time_step);
     integrator_step_2(particles, propagation, time_step);
     if (propagation.integ_switch == INTEG_METHOD_BD) {
       resort_particles_if_needed(*this);

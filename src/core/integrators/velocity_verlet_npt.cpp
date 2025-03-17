@@ -68,8 +68,7 @@ velocity_verlet_npt_propagate_vel_final(ParticleRangeNPT const &particles,
 /** Scale and communicate instantaneous NpT pressure and
  *  propagate the conjugate momentum for volume
  * */
-static void
-velocity_verlet_npt_finalize_p_inst(double time_step) {
+static void velocity_verlet_npt_finalize_p_inst(double time_step) {
   /* finalize derivation of p_inst */
   auto &nptiso = *System::get_system().nptiso;
   auto &npt_inst_pressure = *System::get_system().npt_inst_pressure;
@@ -77,13 +76,15 @@ velocity_verlet_npt_finalize_p_inst(double time_step) {
   npt_inst_pressure.p_inst_vir = 0.0;
   for (unsigned int i = 0; i < 3; i++) {
     if (nptiso.geometry & ::nptgeom_dir[i]) {
-      npt_inst_pressure.p_inst += npt_inst_pressure.p_vir[i] + npt_inst_pressure.p_vel[i];
+      npt_inst_pressure.p_inst +=
+          npt_inst_pressure.p_vir[i] + npt_inst_pressure.p_vel[i];
       npt_inst_pressure.p_inst_vir += npt_inst_pressure.p_vir[i];
     }
   }
 
   double p_sum = 0.0;
-  boost::mpi::reduce(comm_cart, npt_inst_pressure.p_inst, p_sum, std::plus<double>(), 0);
+  boost::mpi::reduce(comm_cart, npt_inst_pressure.p_inst, p_sum,
+                     std::plus<double>(), 0);
   double p_sum_vir = 0.0;
   boost::mpi::reduce(comm_cart, npt_inst_pressure.p_inst_vir, p_sum_vir,
                      std::plus<double>(), 0);
@@ -91,8 +92,10 @@ velocity_verlet_npt_finalize_p_inst(double time_step) {
   double p_epsilon = 0.0;
   if (this_node == 0) {
     npt_inst_pressure.p_inst = p_sum / (nptiso.dimension * nptiso.volume);
-    npt_inst_pressure.p_inst_vir = p_sum_vir / (nptiso.dimension * nptiso.volume);
-    p_epsilon = nptiso.p_epsilon + (npt_inst_pressure.p_inst - nptiso.p_ext) * 0.5 * time_step;
+    npt_inst_pressure.p_inst_vir =
+        p_sum_vir / (nptiso.dimension * nptiso.volume);
+    p_epsilon = nptiso.p_epsilon +
+                (npt_inst_pressure.p_inst - nptiso.p_ext) * 0.5 * time_step;
   }
   boost::mpi::broadcast(comm_cart, p_epsilon, 0);
   nptiso.p_epsilon = p_epsilon;
@@ -213,9 +216,8 @@ velocity_verlet_npt_propagate_pos(ParticleRangeNPT const &particles,
   system.on_boxl_change(true);
 }
 
-static void
-velocity_verlet_npt_propagate_vel(ParticleRangeNPT const &particles,
-                                  double time_step) {
+static void velocity_verlet_npt_propagate_vel(ParticleRangeNPT const &particles,
+                                              double time_step) {
   auto &nptiso = *System::get_system().nptiso;
   auto &npt_inst_pressure = *System::get_system().npt_inst_pressure;
   npt_inst_pressure.p_vel = {};
