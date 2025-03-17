@@ -288,12 +288,14 @@ Variant Analysis::do_call_method(std::string const &name,
   if (name == "calculate_pressure_tensor") {
     return m_obs_stat->do_call_method("calculate_pressure_tensor", {});
   }
+#ifdef NPT
   if (name == "get_instantaneous_pressure") {
     return get_instantaneous_pressure(get_system());
   }
   if (name == "get_instantaneous_pressure_virial") {
     return get_instantaneous_pressure_virial(get_system());
   }
+#endif
   return {};
 }
 
