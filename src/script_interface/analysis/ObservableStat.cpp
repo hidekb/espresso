@@ -153,7 +153,7 @@ Variant ObservableStat::do_call_method(std::string const &name,
     return obs;
 #else
     throw std::runtime_error(
-          "instantaneous pressure cannot be calculated without NPT");
+        "instantaneous pressure cannot be calculated without NPT");
 #endif
   }
   if (name == "get_instantaneous_pressure_virial") {
@@ -162,7 +162,7 @@ Variant ObservableStat::do_call_method(std::string const &name,
     return obs;
 #else
     throw std::runtime_error(
-          "instantaneous pressure cannot be calculated without NPT");
+        "instantaneous pressure cannot be calculated without NPT");
 #endif
   }
   return {};
