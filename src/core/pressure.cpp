@@ -29,7 +29,6 @@
 #include "electrostatics/coulomb.hpp"
 #include "magnetostatics/dipoles.hpp"
 #include "nonbonded_interactions/nonbonded_interaction_data.hpp"
-#include "npt.hpp"
 #include "pressure_inline.hpp"
 #include "short_range_loop.hpp"
 #include "system/System.hpp"
@@ -122,10 +121,4 @@ std::shared_ptr<Observable_stat> System::calculate_pressure() {
   obs_pressure.mpi_reduce();
   return obs_pressure_ptr;
 }
-#ifdef NPT
-double System::get_instantaneous_pressure() { return nptiso->p_inst; }
-double System::get_instantaneous_pressure_virial() {
-  return nptiso->p_inst_vir;
-}
-#endif
 } // namespace System

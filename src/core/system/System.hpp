@@ -65,7 +65,8 @@ class AutoUpdateAccumulators;
 namespace Constraints {
 class Constraints;
 }
-class NptIsoParameters;
+struct NptIsoParameters;
+struct InstantaneousPressure;
 
 namespace System {
 
@@ -305,6 +306,7 @@ public:
   std::shared_ptr<Constraints::Constraints> constraints;
 #ifdef NPT
   std::shared_ptr<NptIsoParameters> nptiso;
+  std::shared_ptr<InstantaneousPressure> npt_inst_pressure;
 #endif
 
 protected:

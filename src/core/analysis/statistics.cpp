@@ -31,6 +31,7 @@
 #include "cell_system/CellStructure.hpp"
 #include "communication.hpp"
 #include "errorhandling.hpp"
+#include "npt.hpp"
 #include "system/System.hpp"
 
 #include <utils/Vector.hpp>
@@ -413,3 +414,11 @@ structure_factor(System::System const &system, std::vector<int> const &p_types,
 
   return {std::move(wavevectors), std::move(intensities)};
 }
+#ifdef NPT
+double get_instantaneous_pressure(System::System const &system) {
+  return system.npt_inst_pressure->p_inst;
+}
+double get_instantaneous_pressure_virial(System::System const &system) {
+  return system.npt_inst_pressure->p_inst_vir;
+}
+#endif

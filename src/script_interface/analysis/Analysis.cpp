@@ -28,6 +28,7 @@
 #include "core/communication.hpp"
 #include "core/dpd.hpp"
 #include "core/nonbonded_interactions/nonbonded_interaction_data.hpp"
+#include "core/npt.hpp"
 
 #include "script_interface/communication.hpp"
 
@@ -288,10 +289,10 @@ Variant Analysis::do_call_method(std::string const &name,
     return m_obs_stat->do_call_method("calculate_pressure_tensor", {});
   }
   if (name == "get_instantaneous_pressure") {
-    return m_obs_stat->do_call_method("get_instantaneous_pressure", {});
+    return get_instantaneous_pressure(get_system());
   }
   if (name == "get_instantaneous_pressure_virial") {
-    return m_obs_stat->do_call_method("get_instantaneous_pressure_virial", {});
+    return get_instantaneous_pressure_virial(get_system());
   }
   return {};
 }

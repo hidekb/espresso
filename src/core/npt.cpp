@@ -41,9 +41,10 @@ static constexpr Utils::Vector3i nptgeom_dir{{1, 2, 4}};
 
 void synchronize_npt_state() {
   auto &nptiso = *System::get_system().nptiso;
-  boost::mpi::broadcast(comm_cart, nptiso.p_inst, 0);
   boost::mpi::broadcast(comm_cart, nptiso.p_epsilon, 0);
   boost::mpi::broadcast(comm_cart, nptiso.volume, 0);
+  auto &npt_inst_pressure = *System::get_system().npt_inst_pressure;
+  boost::mpi::broadcast(comm_cart, npt_inst_pressure.p_inst, 0);
 }
 
 void NptIsoParameters::coulomb_dipole_sanity_checks() const {
@@ -80,10 +81,10 @@ NptIsoParameters::NptIsoParameters(double ext_pressure, double piston,
 
   inv_piston = nptiso.inv_piston;
   volume = nptiso.volume;
-  p_inst = nptiso.p_inst;
+  //p_inst = nptiso.p_inst;
   p_epsilon = nptiso.p_epsilon;
-  p_vir = nptiso.p_vir;
-  p_vel = nptiso.p_vel;
+  //p_vir = nptiso.p_vir;
+  //p_vel = nptiso.p_vel;
 
   /* set the NpT geometry */
   for (auto const i : {0u, 1u, 2u}) {
@@ -113,10 +114,11 @@ void npt_ensemble_init(Utils::Vector3d const &box_l, bool recalc_forces) {
   auto &nptiso = *System::get_system().nptiso;
   nptiso.inv_piston = 1. / nptiso.piston;
   nptiso.volume = std::pow(box_l[nptiso.non_const_dim], nptiso.dimension);
+  auto &npt_inst_pressure = *System::get_system().npt_inst_pressure;
   if (recalc_forces) {
-    nptiso.p_inst = 0.0;
-    nptiso.p_vir = Utils::Vector3d{};
-    nptiso.p_vel = Utils::Vector3d{};
+    npt_inst_pressure.p_inst = 0.0;
+    npt_inst_pressure.p_vir = Utils::Vector3d{};
+    npt_inst_pressure.p_vel = Utils::Vector3d{};
   }
 
   std::vector<double> local_mass;
@@ -159,16 +161,16 @@ void integrator_npt_sanity_checks() {
 void npt_reset_instantaneous_virials() {
   if (::System::get_system().propagation->used_propagations &
       PropagationMode::TRANS_LANGEVIN_NPT) {
-    auto &nptiso = *System::get_system().nptiso;
-    nptiso.p_vir = Utils::Vector3d{};
+    auto &npt_inst_pressure = *System::get_system().npt_inst_pressure;
+    npt_inst_pressure.p_vir = Utils::Vector3d{};
   }
 }
 
 void npt_add_virial_contribution(double energy) {
   if (::System::get_system().propagation->used_propagations &
       PropagationMode::TRANS_LANGEVIN_NPT) {
-    auto &nptiso = *System::get_system().nptiso;
-    nptiso.p_vir[0] += energy;
+    auto &npt_inst_pressure = *System::get_system().npt_inst_pressure;
+    npt_inst_pressure.p_vir[0] += energy;
   }
 }
 
@@ -176,8 +178,8 @@ void npt_add_virial_contribution(const Utils::Vector3d &force,
                                  const Utils::Vector3d &d) {
   if (::System::get_system().propagation->used_propagations &
       PropagationMode::TRANS_LANGEVIN_NPT) {
-    auto &nptiso = *System::get_system().nptiso;
-    nptiso.p_vir += hadamard_product(force, d);
+    auto &npt_inst_pressure = *System::get_system().npt_inst_pressure;
+    npt_inst_pressure.p_vir += hadamard_product(force, d);
   }
 }
 #endif // NPT

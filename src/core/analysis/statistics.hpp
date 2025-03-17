@@ -134,3 +134,14 @@ Utils::Vector9d moment_of_inertia_matrix(System::System const &system,
 Utils::Vector3d calc_linear_momentum(System::System const &system,
                                      bool include_particles,
                                      bool include_lbfluid);
+#ifdef NPT
+/** Calculate instantaneous pressure during NPT integration.
+ *  @param system              particle system
+ */
+double get_instantaneous_pressure(System::System const &system);
+
+/** Calculate instantaneous virial pressure during NPT integration.
+ *  @param system              particle system
+ */
+double get_instantaneous_pressure_virial(System::System const &system);
+#endif

@@ -395,7 +395,7 @@ static bool integrator_step_1(ParticleRange const &particles,
 
 static void integrator_step_2(ParticleRange const &particles,
                               Propagation const &propagation,
-                              Thermostat::Thermostat const &thermostat,
+                              //Thermostat::Thermostat const &thermostat,
                               double time_step) {
   if (propagation.integ_switch == INTEG_METHOD_STEEPEST_DESCENT)
     return;
@@ -427,8 +427,7 @@ static void integrator_step_2(ParticleRange const &particles,
   if ((propagation.used_propagations & PropagationMode::TRANS_LANGEVIN_NPT) and
       (propagation.default_propagation & PropagationMode::TRANS_LANGEVIN_NPT)) {
     auto pred = PropagationPredicateNPT(propagation.default_propagation);
-    velocity_verlet_npt_step_2(particles.filter(pred), *thermostat.npt_iso,
-                               time_step);
+    velocity_verlet_npt_step_2(particles.filter(pred), time_step);
   }
 #endif
 }
@@ -592,7 +591,8 @@ int System::System::integrate(int n_steps, int reuse_forces) {
                                              *local_geo, lb);
     }
 #endif
-    integrator_step_2(particles, propagation, *thermostat, time_step);
+    //integrator_step_2(particles, propagation, *thermostat, time_step);
+    integrator_step_2(particles, propagation, time_step);
     if (propagation.integ_switch == INTEG_METHOD_BD) {
       resort_particles_if_needed(*this);
     }

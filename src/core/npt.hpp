@@ -31,8 +31,7 @@
 #include <utils/Vector.hpp>
 
 /** Parameters of the isotropic NpT-integration scheme. */
-class NptIsoParameters {
-public:
+struct NptIsoParameters {
   NptIsoParameters() = default;
   NptIsoParameters(double ext_pressure, double piston,
                    Utils::Vector<bool, 3> const &rescale, bool cubic_box);
@@ -48,16 +47,8 @@ public:
   std::vector<double> mass_list;
   /** desired pressure to which the algorithm strives to */
   double p_ext = 0.;
-  /** instantaneous pressure the system currently has */
-  double p_inst = 0.;
-  /** instantaneous virial pressure the system with currently has */
-  double p_inst_vir = 0.;
   /** conjugate momentum of volume */
   double p_epsilon = 0.;
-  /** virial (short-range) components of \ref p_inst */
-  Utils::Vector3d p_vir = {0., 0., 0.};
-  /** ideal gas components of \ref p_inst, derived from the velocities */
-  Utils::Vector3d p_vel = {0., 0., 0.};
   /** geometry information for the NpT integrator. Holds the vector
    *  \< dir, dir, dir \> where a positive value for dir indicates that
    *  box movement is allowed in that direction. To check whether a
@@ -80,6 +71,18 @@ public:
   int non_const_dim = -1;
   void coulomb_dipole_sanity_checks() const;
   Utils::Vector<bool, 3> get_direction() const;
+};
+
+/** Instantaneous pressure during force calculation for NPT integration*/
+struct InstantaneousPressure {
+  /** instantaneous pressure the system currently has */
+  double p_inst = 0.;
+  /** instantaneous virial pressure the system with currently has */
+  double p_inst_vir = 0.;
+  /** virial (short-range) components of \ref p_inst */
+  Utils::Vector3d p_vir = {0., 0., 0.};
+  /** ideal gas components of \ref p_inst, derived from the velocities */
+  Utils::Vector3d p_vel = {0., 0., 0.};
 };
 
 /** @brief Synchronizes NpT state such as instantaneous and average pressure

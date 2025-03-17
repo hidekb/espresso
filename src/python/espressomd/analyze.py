@@ -448,10 +448,12 @@ class Analysis(ScriptInterfaceHelper):
         return self._generate_summary(observable, 9, False)
 
     def get_instantaneous_pressure(self):
+        assert_features("NPT")
         observable = self.call_method("get_instantaneous_pressure")
         return observable
 
     def get_instantaneous_pressure_virial(self):
+        assert_features("NPT")
         observable = self.call_method("get_instantaneous_pressure_virial")
         return observable
 

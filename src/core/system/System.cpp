@@ -35,7 +35,6 @@
 #include "communication.hpp"
 #include "electrostatics/icc.hpp"
 #include "errorhandling.hpp"
-#include "npt.hpp"
 #include "particle_node.hpp"
 #include "thermostat.hpp"
 #include "virtual_sites/relative.hpp"
@@ -85,6 +84,7 @@ System::System(Private) {
   constraints = std::make_shared<Constraints::Constraints>();
 #ifdef NPT
   nptiso = std::make_shared<NptIsoParameters>();
+  npt_inst_pressure = std::make_shared<InstantaneousPressure>();
 #endif
   reinit_thermo = true;
   time_step = -1.;
