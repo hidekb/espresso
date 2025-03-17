@@ -81,10 +81,7 @@ NptIsoParameters::NptIsoParameters(double ext_pressure, double piston,
 
   inv_piston = nptiso.inv_piston;
   volume = nptiso.volume;
-  // p_inst = nptiso.p_inst;
   p_epsilon = nptiso.p_epsilon;
-  // p_vir = nptiso.p_vir;
-  // p_vel = nptiso.p_vel;
 
   /* set the NpT geometry */
   for (auto const i : {0u, 1u, 2u}) {
