@@ -101,12 +101,8 @@ while max_force > 10:
 
 # Normal integration
 
-
 system.integrator.set_vv()
-#system.integrator.set_symplectic_euler()
 
-
-# system.non_bonded_inter[0,0].lennard_jones.set_params(epsilon=lj_eps,sigma=lj_sig, cutoff=lj_cut, shift='auto')
 system.integrator.run(0, reuse_forces=False)
 forces = system.part.all().f
 #ase.update_ase()
@@ -126,7 +122,6 @@ print(p.f, p.ext_force, p.v)
 for i in range(10):
     #ase.integrate(1, lj)
     atoms = system.ase.get(integrator="vv")
-    #atoms = system.ase.get()
     atoms.calc = lj
     system.part.all().ext_force = atoms.get_forces()
     system.integrator.run(1, reuse_forces=True)
@@ -136,9 +131,7 @@ for i in range(int_n_times):
 
     #ase.integrate(int_steps, lj)
     atoms = system.ase.get(integrator="vv")
-    #atoms, pos = system.ase.get()
     atoms.calc = lj
     system.part.all().ext_force = atoms.get_forces()
     system.integrator.run(1, reuse_forces=True)
     print(1 / n_part * np.sum(system.part.all().v**2) / 2)
-    #print(1 / n_part * np.sum(system.part.all().v**2) / 2, p.pos - pos[0] - system.time_step * p.v)
