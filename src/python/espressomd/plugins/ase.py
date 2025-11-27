@@ -50,7 +50,7 @@ class ASEInterface:
 
         # We assume here, for simplicity, that
         # the interaction is computed via ASE only.
-        # In the present implementation,
+        # In the previous implementation,
         # the ASE-based force evaluation proceeds as follows:
         #   atoms = system.ase.get()
         #   atoms.calc = lj
@@ -68,13 +68,13 @@ class ASEInterface:
         # then the particle forces are updated according to r(t)
         # before the velocities are advanced.
         # Consequently, in implemented symlectic Euler scheme,
-        # r(t), v(t), F(t) are evolve as:
+        # r(t), v(t), F(t) are evolved as:
         #   F = F(t)
         #   v = v(t) + dt * F / m
         #   r = r(t) + dt * v
-        # This correspond exactly the standard symlectic Euler integrator.
+        # This correspond exactly the standard symplectic Euler integrator.
         #
-        # In contrast, the curreently implemented velocity verlet scheme updates
+        # In contrast, the currently implemented velocity verlet scheme updates
         # r(t), v(t) and F(t) as follows:
         #   F = F(t)
         #   v = v(t) + 0.5 * dt * F / m
@@ -100,7 +100,7 @@ class ASEInterface:
         #   v = v + 0.5 * dt *F / m
         # This sequence ideintical with the standard velocity verlet scheme.
         if integrator == "vv":
-            v = velocities + 0.5 * forces * self._system.time_step
+            v = velocities + 0.5 * forces * self._system.time_step / np.copy(particles.mass)[:, np.newaxis]
             pos = positions + v * self._system.time_step
         else:
             pos = positions
