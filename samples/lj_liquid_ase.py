@@ -71,7 +71,7 @@ system.ase = espressomd.plugins.ase.ASEInterface(
     type_mapping)
     #system.part.all())
 
-# ASE calculator tor provide Lennard-Jones forces
+# ASE calculator provide Lennard-Jones forces
 lj = LennardJones(sigma=lj_sig, epsilon=lj_eps, rc=lj_cut, smooth=False)
 #ase.atoms.calc = lj
 # Overlap removal via steepest descent
