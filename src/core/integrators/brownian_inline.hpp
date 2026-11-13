@@ -42,10 +42,15 @@ inline void brownian_dynamics_rotator(BrownianThermostat const &brownian,
                                       double kT) {
   if (!p.can_rotate())
     return;
+  // p.torque() must always hold the lab-frame torque: the drag terms below
+  // read the body-frame torque from p.torque(), so save the lab-frame value
+  // and restore it afterwards
+  auto const torque_lab = p.torque();
   convert_torque_to_body_frame_apply_fix(p);
   p.quat() = bd_drag_rot(brownian.gamma_rotation, p, time_step);
   p.omega() = bd_drag_vel_rot(brownian.gamma_rotation, p);
   p.quat() = bd_random_walk_rot(brownian, p, time_step, kT);
   p.omega() += bd_random_walk_vel_rot(brownian, p);
+  p.torque() = torque_lab;
 }
 #endif // ESPRESSO_ROTATION

@@ -108,6 +108,44 @@ class SymplecticEuler(ut.TestCase):
                 ref = np.copy(p.ext_torque) * system.time
                 np.testing.assert_allclose(omega, ref, rtol=1e-10)
 
+    @utx.skipIfMissingFeatures(["ROTATION", "EXTERNAL_FORCES"])
+    def test_body_lab_conversion_zero_steps(self):
+        """
+        Integrating zero steps must leave the torques in the lab frame,
+        such that the next integration is not affected and the particle
+        torque can be read out, regardless of how forces are recalculated.
+
+        """
+        system = self.system
+        sequences = [
+            [(0, {}), (1, {})],
+            [(0, {}), (1, {"reuse_forces": True})],
+            [(0, {}), (0, {}), (2, {})],
+            [(1, {}), (0, {"recalc_forces": True}), (1, {})],
+            [(0, {"recalc_forces": True}), (1, {}), (0, {}), (3, {})],
+        ]
+        for integrator_name in ["set_vv", "set_symplectic_euler"]:
+            for sequence in sequences:
+                system.time = 0.
+                system.time_step = 1e-6
+                getattr(system.integrator, integrator_name)()
+                system.part.clear()
+                p = system.part.add(
+                    pos=[0., 0., 0.], rotation=3 * [True],
+                    director=np.array([1., 0.5, 0.3]) / 1.34**0.5,
+                    ext_torque=[1., -0.5, 2.])
+                ext_torque = np.copy(p.ext_torque)
+                for steps, kwargs in sequence:
+                    system.integrator.run(steps, **kwargs)
+                    err_msg = f"with {integrator_name}() and {sequence=} " \
+                        f"after run({steps}, **{kwargs})"
+                    np.testing.assert_allclose(
+                        np.copy(p.torque_lab), ext_torque, rtol=1e-10,
+                        atol=0., err_msg=err_msg)
+                    np.testing.assert_allclose(
+                        np.copy(p.omega_lab), ext_torque * system.time,
+                        rtol=1e-10, atol=1e-20, err_msg=err_msg)
+
 
 if __name__ == "__main__":
     ut.main()
