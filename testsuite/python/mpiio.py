@@ -170,6 +170,22 @@ class MPIIOTest(ut.TestCase):
         mpiio.read(prefix, **fields)
         self.check_sample_system(**fields)
 
+    def test_mpiio_registers_types(self):
+        """Particle types read from file are registered on all MPI ranks."""
+        prefix = self.generate_prefix(self.id())
+        mpiio = espressomd.io.mpiio.Mpiio(system=self.system)
+        self.add_particles()
+        mpiio.write(prefix, types=True, positions=True)
+        self.system.part.clear()
+        # replace the types in the file by a type unknown to the system
+        new_type = 150
+        np.full(npart, new_type, dtype=np.int32).tofile(f"{prefix}.type")
+        mpiio.read(prefix, types=True, positions=True)
+        np.testing.assert_array_equal(
+            np.copy(self.system.part.all().type), npart * [new_type])
+        # raises if the type is not registered on every rank
+        self.system.analysis.min_dist(p1=[new_type], p2=[new_type])
+
     def test_mpiio_without_positions(self):
         prefix = self.generate_prefix(self.id())
         mpiio = espressomd.io.mpiio.Mpiio(system=self.system)

@@ -28,6 +28,7 @@
 #include "ParticleRange.hpp"
 #include "bonded_interactions/bonded_interaction_data.hpp"
 #include "cell_system/CellStructure.hpp"
+#include "nonbonded_interactions/nonbonded_interaction_data.hpp"
 
 #include <string>
 
@@ -79,8 +80,11 @@ void mpi_mpiio_common_write(std::string const &prefix, unsigned fields,
  * @param prefix Filepath prefix.
  * @param fields Specifier for which fields to read.
  * @param cell_structure Bonds to serialize.
+ * @param nonbonded_ias Non-bonded interactions, where the particle types
+ *                      read from file are registered.
  */
 void mpi_mpiio_common_read(std::string const &prefix, unsigned fields,
-                           CellStructure &cell_structure);
+                           CellStructure &cell_structure,
+                           InteractionsNonBonded &nonbonded_ias);
 
 } // namespace Mpiio

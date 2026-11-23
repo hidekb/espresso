@@ -74,7 +74,8 @@ public:
       auto const system_si = m_system.lock();
       auto &system = system_si->get_system();
       auto &cell_structure = *system.cell_structure;
-      Mpiio::mpi_mpiio_common_read(prefix.string(), fields, cell_structure);
+      Mpiio::mpi_mpiio_common_read(prefix.string(), fields, cell_structure,
+                                   *system.nonbonded_ias);
     }
 
     return {};

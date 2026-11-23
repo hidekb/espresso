@@ -54,6 +54,7 @@
 #include "bonded_interactions/bonded_interaction_data.hpp"
 #include "cell_system/CellStructure.hpp"
 #include "errorhandling.hpp"
+#include "nonbonded_interactions/nonbonded_interaction_data.hpp"
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -408,7 +409,8 @@ read_prefs(const std::string &fn, int rank, int size,
 }
 
 void mpi_mpiio_common_read(const std::string &prefix, unsigned fields,
-                           CellStructure &cell_structure) {
+                           CellStructure &cell_structure,
+                           InteractionsNonBonded &nonbonded_ias) {
   cell_structure.remove_all_particles();
 
   int size, rank;
@@ -478,6 +480,17 @@ void mpi_mpiio_common_read(const std::string &prefix, unsigned fields,
       p.type() = *type_it;
       ++type_it;
     }
+
+    // Register the types on all ranks, as when setting them from the
+    // script interface: the interaction tables are indexed by type.
+    int local_max_type = 0;
+    if (not type.empty()) {
+      local_max_type = std::ranges::max(type);
+    }
+    int global_max_type = 0;
+    MPI_Allreduce(&local_max_type, &global_max_type, 1, MPI_INT, MPI_MAX,
+                  MPI_COMM_WORLD);
+    nonbonded_ias.make_particle_type_exist(global_max_type);
   }
 
   if (fields & MPIIO_OUT_VEL) {
