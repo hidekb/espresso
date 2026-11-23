@@ -197,6 +197,30 @@ class ParticleSliceTest(ut.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Parameter 'values' is missing"):
             self.all_partcls.call_method("set_param_parallel", name="type")
 
+    @utx.skipIfMissingFeatures(["LENNARD_JONES"])
+    def test_types_new_type_on_ghost(self):
+        """A new type set through a slice is known on all MPI ranks,
+        including those where the particle is only a ghost."""
+        system = self.system
+        system.part.clear()
+        system.time_step = 0.01
+        system.cell_system.skin = 0.4
+        # positive cutoff, so that the Verlet criterion is evaluated
+        system.non_bonded_inter[0, 0].lennard_jones.set_params(
+            epsilon=1., sigma=1., cutoff=1.5, shift="auto")
+        try:
+            # close pair across the domain boundary at x = 5 (2 or 4 ranks)
+            p0, p1 = system.part.add(pos=[[4.6, 2.5, 5.], [5.4, 2.5, 5.]])
+            new_type = 42  # not registered by any interaction or particle
+            system.part.by_ids([p0.id, p1.id]).type = [0, new_type]
+            self.assertEqual(p1.type, new_type)
+            # raises if the type is not registered on every rank
+            system.analysis.min_dist(p1=[new_type], p2=[new_type])
+            system.analysis.energy()
+            system.integrator.run(1)
+        finally:
+            system.non_bonded_inter[0, 0].lennard_jones.deactivate()
+
     def test_bonds(self):
 
         fene = espressomd.interactions.FeneBond(k=1, d_r_max=1, r_0=1)

@@ -116,16 +116,20 @@ static void set_particles_types(std::vector<int> const &pids,
                                 std::vector<int> const &types,
                                 CellStructure &cell_structure,
                                 ::System::System &system) {
+  if (types.empty()) {
+    return;
+  }
+  if (std::ranges::any_of(types, [](int type) { return type < 0; })) {
+    throw std::domain_error(error_msg("type", "must be an integer >= 0"));
+  }
+  // register the types on all ranks, not only on the ranks owning the
+  // particles: a ghost particle of a new type is looked up in the
+  // interaction tables of the ranks where it is a ghost
+  system.nonbonded_ias->make_particle_type_exist(std::ranges::max(types));
   for (std::size_t i = 0; i < pids.size(); ++i) {
-    auto const pid = pids[i];
-    auto p = cell_structure.get_local_particle(pid);
+    auto p = cell_structure.get_local_particle(pids[i]);
     if (p != nullptr and not p->is_ghost()) {
-      auto const &new_type = types[i];
-      if (new_type < 0) {
-        throw std::domain_error(error_msg("type", "must be an integer >= 0"));
-      }
-      system.nonbonded_ias->make_particle_type_exist(new_type);
-      p->type() = new_type;
+      p->type() = types[i];
     }
   }
 }
